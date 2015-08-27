@@ -1,0 +1,56 @@
+
+
+ID = (SID-1, SID-2)
+—> TID-0 = standard, well-defined identifier
+
+// *** authentication and key exchange for the session control channel (TID-0) *** 
+// NOTE: other key exchange protocols can be dropped in here
+P1->P2: rpc-request(id=(SID, TID-0, nonceA), “prove-identity(nil, <optionsA>, <keyshareA>, NULL, <challengeA-1, challengeA-2>)”)
+P2->P1: rpc-request(id=(SID, TID-0, nonceB), “prove-identity(nonceA, <optionsB>, <keyshareB>, NULL, <challengeB-1, challengeB-2>)”)
+P1->P2: rpc-response(id=(SID, TID-0, nonceB), result=(OK, challenge-response(signature(key-P1, challengeB-1), encrypt(keyAB, (challengeB-2, nonceB)))
+P2->P1: rcp-response(id=(SID, TID-0, nonceA), result=(OK, challenge-response(signature(key-P2, challengeA-1), encrypt(keyAB, (challengeA-2, nonceA)))
+
+—> nil = empty nonce for the initial RPC request
+—> optionsA = (preferred identity information, DH parameters, …)
+—> key-Pi = private key of Pi or key shared between P1 and P2 
+—> keyAB = DH(keyshareA, keyshareB)
+
+// *** use the new encrypted and authenticated session default thread TID-0 ***
+// NOTE: all requests and responses are implicitly encrypted with the key associated with the thread
+
+// set MTU for all threads
+P1->P2: rpc-request(id=(SID, TID-0, nonce), “set(MTU, <value>)”)
+P2->P1: rpc-response(id=(SID, TID-0, nonce), result(OK, (<value>)) // Success
+P2->P1: rpc-response(id=(SID, TID-0, nonce), result(FAIL, <reason>) // Failure
+
+// *** spawn new channels/threads in the context of ***
+// Option 1: create a new isolated authenticated and encrypted thread 
+P1->P2: rpc-request(id=(SID, TID-0, nonceC), Enc(keyAB,“prove-identity(nil, <optionsC>, <keyshareC>, TID-1a, <challengeC-1, challengeC-2>)”)))
+P2->P1: rpc-request(id=(SID, TID-0, nonceD), Enc(keyAB,“prove-identity(nonceC, <optionsD>, <keyshareD>, TID-1b, <challengeD-1, challengeD-2>)”))
+P1->P2: rpc-response(id=(SID, TID-0, nonceD), Enc(keyAB,result=(OK, challenge-response(signature(key-EntityC, challengeD-1), encrypt(keyT-1, (challengeB-2, nonceD))))
+P2->P1: rcp-response(id=(SID, TID-0, nonceC), Enc(keyAB,result=(OK, challenge-response(signature(key-EntityD, challengeC-1), encrypt(keyT-1, (challengeA-2, nonceC))))
+// NOTE: 'icn-protocol-identifier’ can be added to the request as in Option 2 below
+
+—> key-EntityC/D = public or pre-shared key associated with entity C/D (this is separate from the peer)
+—> keyT-1 = TID-1 shared key
+—> TID-1 = (TID-1a, TID-1b)
+
+// Option 2: specify channel keys explicitly
+P1->P2: rpc-request(id=(SID, TID-0, nonce), Enc(keyAB, “create-thread(TID-5a, key, 'icn-protocol-identifier')”))
+P2->P1: rpc-response(id=(SID, TID-0, nonce), Enc(keyAB, result=(OK, TID-5b))) 
+P2->P1: rpc-response(id=(SID, TID-0, nonce), Enc(keyAB, result=(FAIL, <reason>))) 
+// reason could be one of:
+//  - protocol not supported
+//  - ...
+
+// tear down the thread
+P1->P2: rpc-request(id=(SID, TID-0, nonce), Enc(keyAB, “destroy-thread(TID-5)”))
+P2->P1: rpc-response(id=(SID, TID-0, nonce), Enc(keyAB, result=(OK, TID-5)))
+// both parties teardown state...
+// NOTE: the destroy request is idempotent — attempting to destroy non-existent thread will yield OK
+
+
+
+
+
+
