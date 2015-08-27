@@ -1,0 +1,121 @@
+---
+title: Locical Link Control for ICN Protocols
+abbrev: ICN-LLC
+docname: draft-tschudin-icnrg-llc-00
+date: 2015-08-27
+category: info
+
+ipr: trust200902
+area: General
+workgroup: ICNRG Working Group
+keyword: Internet-Draft
+
+stand_alone: yes
+pi: [toc, sortrefs, symrefs]
+
+author:
+ -
+    ins: C. Tschudin
+    name: Christian Tschudin
+    organization: University of Basel
+    email: christian.tschudin@unibas.ch
+ -
+    ins: C. Wood
+    name: Chrisstopher Wood
+    org: PARC
+    email: cwood@parc.com
+
+normative:
+  RFC2119:
+  RFC3986:
+  RFC4086:
+  RFC4648:
+
+informative:
+  RFC5389:
+  I-D.ietf-behave-turn:
+  STUNT:
+    target: http://deusty.blogspot.com/2007/09/stunt-out-of-band-channels.html
+    title: STUNT & out-of-band channels
+    author:
+      name: Robbie Hanson
+      ins: R. Hanson
+    date: 2007-09-17
+  I-D.meyer-xmpp-e2e-encryption:
+  I-D.ietf-xmpp-3920bis:
+
+
+
+--- abstract
+
+abc
+
+--- middle
+
+Introduction        {#problems}
+============
+
+our task was: look at negotiation. We understood it: do LLC.
+
+goal of LLC: "After the negotiation, I know for sure the essential
+parameters and can name and act on the essential things to manage."
+
+In detail: after a brief pre-negotiation phase, all further traffic
+is/can be encrypted and exchnaged between authenticated entities.
+
+
+Cast (who plays a role), notation
+
+  - assumption about the transport channel (=link), "magic that happened before"
+  - "pipeline picture" - link, session, session manager, threads
+  - rpc pattern, negotiation style
+  - "outer entities", its API towards the session manager
+
+Scope of document:
+
+  - concepts
+  - high level protocol for specific negotiation tasks: (initSession, startSecureAssociation,
+    inspection, setMTU, create and destroy logical links)
+  - encodings? at least for RPC-request, RPC-response and DATAGRAM
+  -
+
+
+Intro
+=====
+
+Concepts (incl assumptions)
+===========================
+
+link-level RPC
+==============
+
+Negotiation Tasks
+=================
+
+a)
+--
+
+Encoding (of RPC and parameters)
+================================
+
+RPC verbs
+---------
+
+RPC parameters
+--------------
+
+three msg headers
+-----------------
+
+
+Security Considerations
+=======================
+
+yes
+
+--- back
+
+
+Examples  {#xmp}
+========
+
