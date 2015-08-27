@@ -86,13 +86,33 @@ Intro
 Concepts (incl assumptions)
 ===========================
 
-link-level RPC
-==============
+assumptions
+-----------
+[cw]
+
+cast
+----
+[cft], incl picture
+
+negotiation style
+-----------------
+[cft]
+
+outer entities, aggregation
+---------------------------
+[cw]
+
+
+link-level RPC (and the three msgs)
+===================================
+
+[cft]
+
 
 Negotiation Tasks
 =================
 
-a)
+a) [cw]
 --
 
 Encoding (of RPC and parameters)
