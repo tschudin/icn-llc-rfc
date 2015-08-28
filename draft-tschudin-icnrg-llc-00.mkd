@@ -168,7 +168,7 @@ LLC Concepts
 
 Assumptions
 -----------
-The LLC makes the following assumptions:
+The LLC protocol makes the following assumptions:
 
 * The communication parameters necessary to communicate over a link are
 established before the protocol is executed. This includes settings that,
@@ -192,10 +192,32 @@ negotiation style
 -----------------
 [cft]
 
-outer entities, aggregation
----------------------------
-[cw]
+Endpoints Entities
+------------------
+Each endpoint has an associated entity that is responsible for initating links
+between other endpoints to exchange ICN traffic. Each of these entities interfaces
+with the LLC protocol using the LLC API, which is outlined below:
 
+int udp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
+to the endpoint at the specified IP address and port using UDP as the transport mechanism.
+int tcp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
+to the endpoint at the specified IP address and port using TCP as the transport mechanism.
+int ip_connect(ip_address string, protocolIdentifier string): create a new connection
+to the endpoint at the specified IP address.
+int mac_connect(mac_address string, protocolIdentifier string): create a new connection to
+the endpoint at the specified MAC address.
+
+In all cases, the "protocolIdentifier" parameter is a well-defined name for the
+ICN protocol to use. For example,
+
+protocolIdentifier = {'ccnx10, ndn'}
+
+The return value for these functions is a unique identifier that the LLC session manager
+uses to identify links and sessions. It is used when an entity wishes to teardown a 
+given link using the function specified below.
+
+void connection_teardown(connectionId int): teardown and destroy all state associated with the
+specified connection ID.
 
 link-level RPC (and the three msgs)
 ===================================
