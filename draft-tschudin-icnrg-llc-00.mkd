@@ -26,23 +26,23 @@ author:
     email: cwood@parc.com
 
 normative:
-  RFC2119:
-  RFC3986:
-  RFC4086:
-  RFC4648:
+---  RFC2119:
+---  RFC3986:
+---  RFC4086:
+---  RFC4648:
 
 informative:
-  RFC5389:
-  I-D.ietf-behave-turn:
-  STUNT:
-    target: http://deusty.blogspot.com/2007/09/stunt-out-of-band-channels.html
-    title: STUNT & out-of-band channels
-    author:
-      name: Robbie Hanson
-      ins: R. Hanson
-    date: 2007-09-17
-  I-D.meyer-xmpp-e2e-encryption:
-  I-D.ietf-xmpp-3920bis:
+---  RFC5389:
+---  I-D.ietf-behave-turn:
+---  STUNT:
+---    target: http://deusty.blogspot.com/2007/09/stunt-out-of-band-channels.html
+---    title: STUNT & out-of-band channels
+---    author:
+---      name: Robbie Hanson
+---      ins: R. Hanson
+---    date: 2007-09-17
+---  I-D.meyer-xmpp-e2e-encryption:
+---  I-D.ietf-xmpp-3920bis:
 
 
 
@@ -67,29 +67,32 @@ It is assumed that two endpoints executing the LLC have already discovered each 
 and configured their lower-layer transport mechanism to enable end-to-end communication.
 A single session is establish over this link for end-to-end control. This session is
 used to control, for example, the link MTU size before an encrypted channel has been
-setup between the two endpoints. Within this session, an encrypted control channel is
-established for further control messages; each endpoint is authenticated during this
+setup between the two endpoints. Within this session, an encrypted control channel can
+be established for further control messages; each endpoint is authenticated during this
 stage.
 
-Finally, after an encrypted control channel is established, per-protocol communication
+Finally, after the encrypted control channel is established, per-protocol communication
 channels, or threads, can be instantiated within the context of the link session.
-A session manager is responsible for handling the control messages exchanged between
-endpoints in the context of a given session. These individual threads are used to send
-protocol-specific traffic between the two endpoints. For example, two endpoints with an established
-session could create two separate threads for CCNx and NDN traffic.
+<!-- A session manager is responsible for handling the control messages exchanged between
+endpoints in the context of a given session. -->
+
+Threads are used to send protocol-specific traffic go a remote "packet
+handler". For example, two endpoints with an established session could
+create two separate threads for CCNx and NDN traffic. Threads are
+unidirectional but are often used in pairs (to have bidirectionality).
 
 The hierarchy of control in the LLC is shown below.
 
 ~~~
-+-------------------------------------+
-|                Link                 |
-|  +-------------------------------+  |
-|  |            Session            |  |
-|  |   +------------------------+  |  |
-|  |   |         Thread         |  |  |
-|  |   +------------------------+  |  |
-|  +-------------------------------+  |
-+-------------------------------------+
++------------------------------------------------+
+|        1 Link (bidirectional transport)        |
+|  +------------------------------------------+  |
+|  |     1 Session                            |  |
+|  |   +-----------------------------------+  |  |
+|  |   | N Threads (= undirect. log. link) |  |  |
+|  |   +-----------------------------------+  |  |
+|  +------------------------------------------+  |
++------------------------------------------------+
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
@@ -188,6 +191,12 @@ cast
 ----
 [cft], incl picture
 
+~~~
+the fig
+~~~
+{: #llc-cast title="Entities (all claiming to be end points 8-)."}
+
+
 negotiation style
 -----------------
 [cft]
@@ -219,44 +228,114 @@ given link using the function specified below.
 void connection_teardown(connectionId int): teardown and destroy all state associated with the
 specified connection ID.
 
-link-level RPC (and the three msgs)
-===================================
+Link-level RPC and Logical Link Traffic
+=======================================
 
-[cft]
+All configuration state of a session, including state related to the
+session's threads, are managed by remote procedure operations. To this
+end, two message types "RPC-request" and "RPC-response" are needed. A
+third message type is added to this set for actual production (=
+non-control) traffic, called "logical link traffic".  We describe each
+of these three message types and their mandatory fields in an
+encoding-neutral way. See section X for the actual code points.
 
-@Christian: maybe you can also describe the notation of the language here? e.g., P1->P2: XXX means "P1 sends XXX to P2"
+We first show the list of data structures before explaining each of
+them.
+
+~~~
+    rpc-request (RID, verb, parameter-list)
+    rpc-response(RID, OK|FAIL, result-list|reason-list)
+    llt-message (LID, blob)
+
+    RID = rid(SID, nonce)   # request ID
+    LID = lid(SID, TID)     # logical link ID
+    SID = sid(val1, val2)   # session ID
+    TID = tid(val1, val2)   # thread ID
+~~~
+{: #llc-msgs title="The three message types of ICN-LLC."}
+
+RPC-request
+-----------
+
+(See also Figure [#llc-msgs]) An RPC-request message carries an ID
+that identifyies the request instance (RID) as well as a verb and an
+optional payload with the list of parameters.
+
+The RID carries two pieces of information: The current session's ID
+(SID) comes first, followed by a nonce. The role of the SID is to
+refer to previously established state and must be kept constant for
+all messages sent inside the established session. The Nonce is
+randomly chosen for each new RPC-request and permits to retransmit a
+request in case the sender thinks that the request or the reply got
+lost. It is not a sequence number, though.
+
+
+RPC-response
+------------
+
+An RPC-response is always the reaction to a received RPC-request. It
+contains a copy of the request's RID so that the requestor can
+correlate the answer with the pending request. Furthermore, the
+RPC-response has a verb similar to the RPC-request. However, the
+permitted verbs are limited to either "OK" or "FAIL".
+
+
+Logical Link Traffic
+--------------------
+
+Logical Link Traffic refers to the messages that travel inside a
+logical link (called thread). This message type has three fields: tag,
+logical link ID and payload.
+
+The logical link is identified by a tuple that refers to the session
+context (SID) as well as the thread to which this message belongs
+to. In fact, the <SID, TID> tuple is a "network pointer" into the
+other end's function space [NetPtrs]. The thread ID is also a tuple,
+in this case of two numbers. Often, threads are used in pairs in which
+case the tuple's values are swapped.
+
 
 Negotiation Tasks
 =================
 
-We now describe the major negotiation tasks (message exchanges) that make up
-the LLC protocol. For simplicity, we refer to each of the endpoints in the
-protocol as P1 and P2.
+We now describe the major negotiation tasks (RPC calls) that make up
+the LLC protocol.  Any side can initiate an RPC at any time. It is
+suggested to limit the number of RPCs that one side issues in parallel
+to four (including nesting).
+
+{REMOVE? For simplicity, we refer to each of the endpoints in the
+protocol as Q for Questioner and R for Responder. Or use P1 and P2, or
+P1 and EP2 for endpoint?}
+
 
 Session Initialization
 ----------------------
 
-The session initialization task is the first step in establishing and using a link
-between two endpoints. Assuming a communication link for the underlying transport protocol
-is established, it is done by the following RPC exchange.
+The session initialization task is the first step in establishing and
+using a link between two endpoints. Assuming such a communication link
+for the underlying transport protocol is established, it is done by
+the following RPC exchange.
 
 ~~~
-P1                                                 P2
-        rpc-request(id=(SID-1), "start-session”)
-            ---------------------------->  
+  --> rpc-request(rid(SID-1,0), nonce), START-SESSION, list())
 
-                                            On success:
-      rpc-response: (id=(SID-1), result(OK, SID-2))
-            <----------------------------
-
-                                            On failure:
-      rpc-response(id=(SID-1), result(FAIL, <reason>))
-            <----------------------------
+                                                 On success:
+  <-- rpc-response(rid(SID-1,0), nonce), OK, list(SID-2))
+                                                 On failure:
+  <-- rpc-response(rid(SID-1,0), nonce), FAIL, list(<reason>))
 ~~~
-{: #session-init title="Session Initialization Message."}
+{: #session-init title="Session Initialization Message Exchange."}
 
-The session identifier SID is treated as the tuple (SID-1, SID-2)
-after the completion of this exchange.
+After that exchange was executed, both ends will use the session ID
+consisting of SID-1 and SID-2 i.e., sid(SID-1,SID-2) in order to refer
+to this new session. In the following we abbreviate this tuple to SID.
+
+Note that session initialization leaves the two endpoints in an
+unsecure state until they have executed the secure association task
+(see below).
+
+{Question: how to handle/mitigate an attcker injecting
+such "reset" messages?|
 
 Inspection
 ----------
@@ -266,66 +345,59 @@ from an endpoint, e.g., the preferred MTU size. The RPC exchange
 for an inspection message is as follows.
 
 ~~~
-P1                                                         P2
-    rpc-request(id=(SID, TID-0, nonce), “lookup(MTU)")
-            ---------------------------->  
+  --> rpc-request(rid(SID, nonce), “lookup", list("/conf/PreferredMTU"))
 
                                                    On success:
-rpc-response(id=(SID, TID-0, nonce),  result(OK, <MTU value>))
-            <----------------------------
-
+  <-- rpc-response(rid(SID, nonce), OK, list(<MTU value>))
                                                    On failure:
-rpc-response(id=(SID, TID-0, nonce),  result(FAIL, <reason>))
-            <----------------------------
+  <-- rpc-response(rid(SID, nonce), FAIL, list(<reason>))
 ~~~
-{: #inspection-msg title="Inspection (for MTU)."}
-
-In this context, TID-0 is the standard control channel for
-the session. All threads that are spawned in the context of session
-SID will be assigned different identifiers.
+{: #inspection-msg title="Remote inspection (for MTU)."}
 
 Inspection messages may be used to query any well-named object from
-the recipient endpoint. In the example above, the inspection for the MTU
-would usually occur before establishing a secure session association (SA).
-Thus, the contents of the RPC request and response are unencrypted.
-However, after a SA is established, all inspection messages will be
-encrypted like other link traffic.
+the recipient endpoint. In the example above, the inspection for the
+preferred MTU would usually occur before establishing a secure session
+association (SA).  Thus, before SA, the contents of the RPC request
+and response are unencrypted.  However, after a SA is established, all
+inspection messages will be encrypted like other link traffic.
 
 Secure Association Establishment
 --------------------------------
 
 The secure association (SA) establishment message exchange is used to
 create a secure session over a given link. This enables all subsequent
-traffic to be authenticated and encrypted. The goal is for each endpoint
-to authenticate the entity running on the other endpoint of a given link,
-and to then establish shared symmetric keys to perform authenticated
-encryption of all traffic that follows the exchange.
-Currently, we specify a simple challenge-response mutual authentication protocol.
-This can be replaced with any functionally equivalent protocol.
+traffic, including RPC exchanges, to be authenticated and
+encrypted. The goal is for each endpoint to authenticate the entity
+running on the other endpoint of a given link, and to then establish
+shared symmetric keys to perform authenticated encryption of all
+traffic that follows the exchange.  Currently, we specify a simple
+challenge-response mutual authentication protocol.  This can be
+replaced with any functionally equivalent protocol.
+
+Note that the SA involves nested RPCs: The responder to the initial
+RPC request will do an RPC in reverse direction in order to
+authenticate the requestor.
+
+Note also that encrypt(K,M) stands for the ciphertext resulting from
+applying key K to message M.
 
 ~~~
-P1                                                                P2
-    rpc-request(id=(SID, TID-0, nonceA),
-      “prove-identity(nil, <optionsA>, <keyshareA>,
-      NULL, <challengeA-1, challengeA-2>)”)
-            ---------------------------->  
+  --> rpc-request(rid(SID, nonceA), “prove-identity",
+                  list(nil, <optionsA>, <keyshareA>,
+                       NULL, <challengeA-1, challengeA-2>))
 
-    rpc-request(id=(SID, TID-0, nonceB),
-      “prove-identity(nonceA, <optionsB>, <keyshareB>,
-      NULL, <challengeB-1, challengeB-2>)”)
-            <----------------------------
+      <-- rpc-request(rid(SID, nonceB), “prove-identity"
+                      list((nonceA, <optionsB>, <keyshareB>,
+                           NULL, <challengeB-1, challengeB-2>))
+      --> rpc-response(rid(SID, nonceB), OK,
+                      list(signature(key-P1, challengeB-1),
+                           encrypt(keyAB, list(TIDa, challengeB-2, nonceB)))
 
-    rpc-response(id=(SID, TID-0, nonceB),
-      result=(OK, challenge-response(signature(key-P1, challengeB-1),
-      encrypt(keyAB, (challengeB-2, nonceB)))
-            ---------------------------->
-
-    rcp-response(id=(SID, TID-0, nonceA),
-      result=(OK, challenge-response(signature(key-P2, challengeA-1),
-      encrypt(keyAB, (challengeA-2, nonceA)))
-           <----------------------------
+  <-- rcp-response(rid(SID, nonceA), OK,
+                   list((signature(key-P2, challengeA-1),
+                        encrypt(keyAB, list(TIDb, challengeA-2, nonceA)))
 ~~~
-{: #sa-init title="Session Initialization Message."}
+{: #sa-init title="Secure Association with two challenge-response rounds."}
 
 In the first message, the value nil is used to represent an empty nonce.
 
@@ -336,15 +408,43 @@ information, at a minimum:
     when processing the challenge and response).
 * Diffie Hellman group parameters
 
-The key key-Pi = private key of Pi or key shared between P1 and P2. Lastly,
-keyAB is the ket material derived from the output of the Diffie Hellman exchange
-with the shares keyshareA and keyshareB. That is, logically,
+The key key-Pi = private key of Pi or key shared between P1 and P2.
+
+Lastly, keyAB is the key material derived from the output of the
+Diffie Hellman exchange with the shares keyshareA and keyshareB. That
+is, logically,
 
     keyAB = DH(keyshareA, keyshareB)
 
-Note that the above exchange only includes the success case. When a failure occurs,
-the recipient replies with an error code as in the Inspection message case and
-terminates the session state information.
+When a failure occurs in the secure association RPC (not shown in the
+digram above), the recipient replies with an error code (in clear) as
+in the Inspection message case and does not establish a new (or
+replace an old) secured logical link.
+
+<!-- was: terminates the session state information -->
+
+Otherwise the secure association request succeeded and from this point
+in time on the two endpoints will exchange their control messages in
+encrypted form inside threads.
+
+To this end, the protocol above exchanged and authenticated two
+endpoint-chosen numbers TIDa and TIDb.  The thread starting from the
+side that chose the TIDa value will use thread ID TIDAB=(TIDa,
+TIDb) while the other side can use thread TIDBA=(TIDb,TIDa) to reply.
+
+For example, the remote inspection RPC can now be executed in a secured
+fashion as follows:
+
+  --> llt-message(TIDAB, encrypt(keyAB, rpc-request(rid(SID, nonce),
+                                  “lookup", list("/conf/PreferredMTU"))))
+
+                                                   On success:
+  <-- llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                                  OK, list(<MTU value>))))
+~~~
+
+//// I stoped editing here (cft)
+
 
 Set MTU
 -------
