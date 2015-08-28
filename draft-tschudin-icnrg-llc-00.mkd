@@ -168,7 +168,21 @@ LLC Concepts
 
 Assumptions
 -----------
-[cw]
+The LLC makes the following assumptions:
+
+* The communication parameters necessary to communicate over a link are
+established before the protocol is executed. This includes settings that,
+for example, enable bidirectional firewall traversal.
+
+* The underlying link protocol provides the most basic ability to encapsulate
+and move an arbitrary sized payload from one endpoint to another. 
+
+* Each endpoint has an identity and can prove its identity to the other endpoints
+associated with links.
+
+* Endpoints are configured with the identities that they trust, i.e., those endpoints
+that are allowed to participate in the execution of the LLC protocol. These identities
+could be ascertained online or configured manually by system administrators.
 
 cast
 ----
