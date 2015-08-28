@@ -55,21 +55,71 @@ abc
 Introduction        {#problems}
 ============
 
-our task was: look at negotiation. We understood it: do LLC.
+This document specifies a logical link control (LLC) protocol to facilitate interoperability
+and coexistence of ICN protocols such as CCNx and NDN. The goal of the LLC protocol
+is to perform link negotiation between two endpoints to name, configure, and manage
+the essential parameters for communication. This negotiation process is used to
+establish a secure link between two endpoints through which all traffic is (or
+can be) encrypted and authenticated.
 
-goal of LLC: "After the negotiation, I know for sure the essential
-parameters and can name and act on the essential things to manage."
+The LLC negotiates the parameters for and manages a logical link between two endpoints.
+It is assumed that two endpoints executing the LLC have already discovered each other
+and configured their lower-layer transport mechanism to enable end-to-end communication.
+A single session is establish over this link for end-to-end control. This session is
+used to control, for example, the link MTU size before an encrypted channel has been
+setup between the two endpoints. Within this session, an encrypted control channel is
+established for further control messages; each endpoint is authenticated during this
+stage.
 
-In detail: after a brief pre-negotiation phase, all further traffic
-is/can be encrypted and exchnaged between authenticated entities.
+Finally, after an encrypted control channel is established, per-protocol communication
+channels, or threads, can be instantiated within the context of the link session.
+A session manager is responsible for handling the control messages exchanged between
+endpoints in the context of a given session. These individual threads are used to send
+protocol-specific traffic between the two endpoints. For example, two endpoints with an established
+session could create two separate threads for CCNx and NDN traffic.
 
+The hierarchy of control in the LLC is shown below.
 
-Cast (who plays a role), notation
+~~~
++-------------------------------------+
+|                Link                 |
+|  +-------------------------------+  |
+|  |            Session            |  |
+|  |   +------------------------+  |  |
+|  |   |         Thread         |  |  |
+|  |   +------------------------+  |  |
+|  +-------------------------------+  |
++-------------------------------------+
+~~~
+{: #llc-hierarchy title="Control hierarchy in the LLC."}
+
+All control (e.g., negotiation) messages follow RPC-style model. That is, a RPC-request
+has an identity for the parent context (e.g., the session), an action (verb) that identifies
+the action to be done, and additional parameters. Each RPC-request is followed by
+an RPC-response which specifies the result of the operation, e.g., an OK flag
+or a FAIL flag with some useful error information. All protocol-specific traffic
+which is sent over a LLC-configured thread is placed in a datagram frame.
+
+The goal of the LLC and its session manager is to expose an API to endpoints that enables
+them to create link connections to external endpoints to exchange ICN protocol-specific
+traffic. For example, the API of this LLC session manager might be:
+
+udp_connect(ip_address string, port int, protocolIdentifier string)
+tcp_connect(ip_address string, port int, protocolIdentifier string)
+ip_connect(ip_address string, protocolIdentifier string)
+mac_connect(mac_address string, protocolIdentifier string)
+
+In all cases, the "protocolIdentifier" parameter is a well-defined name for the
+ICN protocol to use. For example,
+
+protocolIdentifier = {'ccnx10, ndn'}
+
+<!-- Cast (who plays a role), notation
 
   - assumption about the transport channel (=link), "magic that happened before"
   - "pipeline picture" - link, session, session manager, threads
   - rpc pattern, negotiation style
-  - "outer entities", its API towards the session manager
+  - "outer entities", its API towards the session manager -->
 
 Scope of document:
 
