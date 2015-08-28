@@ -1,5 +1,5 @@
 ---
-title: Locical Link Control for ICN Protocols
+title: Logical Link Control for ICN Protocols
 abbrev: ICN-LLC
 docname: draft-tschudin-icnrg-llc-00
 date: 2015-08-27
@@ -20,8 +20,8 @@ author:
     organization: University of Basel
     email: christian.tschudin@unibas.ch
  -
-    ins: C. Wood
-    name: Chrisstopher Wood
+    ins: C. A. Wood
+    name: Christopher A. Wood
     org: PARC
     email: cwood@parc.com
 
@@ -79,10 +79,6 @@ Scope of document:
   - encodings? at least for RPC-request, RPC-response and DATAGRAM
   -
 
-
-Intro
-=====
-
 Concepts (incl assumptions)
 ===========================
 
@@ -138,4 +134,3 @@ yes
 
 Examples  {#xmp}
 ========
-
