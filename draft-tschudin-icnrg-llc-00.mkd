@@ -123,16 +123,50 @@ protocolIdentifier = {'ccnx10, ndn'}
 
 Scope of document:
 
-  - concepts
+The rest of this document outlines the exact definition and notation used in the description
+of the LLC, the relevant concepts necessary to understand the protocol, a high-level
+description of the protocol (along with message content), and the encoding details
+of each message.
+
+  <!-- - concepts
   - high level protocol for specific negotiation tasks: (initSession, startSecureAssociation,
     inspection, setMTU, create and destroy logical links)
   - encodings? at least for RPC-request, RPC-response and DATAGRAM
-  -
+  - -->
 
-Concepts (incl assumptions)
-===========================
+Definitions and Notation
+========================
 
-assumptions
+The following terms are used:
+
+endpoint: An endpoint which is capable of supporting at least one ICN protocol.
+
+link: A logical connection between two endpoints.
+
+sender: An endpoint which is sending a message from to another session over a link.
+
+sender: An endpoint which is receiving a message from another session over a link.
+
+session: A semi-permanent context in which information is (possibly encrypted and) exchanged
+over a link between two endpoints.
+
+session manager: A control unit responsible for managing a session between two endpoints.
+
+thread: An isolated and ephemeral context managed by a session manager in which
+ICN-specific traffic is sent between two endpoints.
+
+RPC-request: A request to perform an RPC action from a sender to a receiver.
+
+RPC-response: A response to an RPC-request sent from RPC-request receiver to the
+RPC-request sender.
+
+datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
+interest or content object).
+
+LLC Concepts
+============
+
+Assumptions
 -----------
 [cw]
 
