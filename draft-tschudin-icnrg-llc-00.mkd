@@ -55,31 +55,35 @@ abc
 Introduction        {#problems}
 ============
 
-This document specifies a logical link control (LLC) protocol to facilitate interoperability
-and coexistence of ICN protocols such as CCNx and NDN. The goal of the LLC protocol
-is to perform link negotiation between two endpoints to name, configure, and manage
-the essential parameters for communication. This negotiation process is used to
-establish a secure link between two endpoints through which all traffic is (or
-can be) encrypted and authenticated.
+This document specifies a logical link control (LLC) protocol to
+establish a secure association between two endpoints running ICN
+software.  It consists of a negotiation method to explore, configure,
+and manage the essential parameters for communication, permitting to
+switch from unsecured message exchange to encrypted and authenticated
+communications. It also supports the dynamic creation of logical links
+on a per-protocol basis, permitting to use the link for multiple ICN
+protocols such as CCNx and NDN, in parallel.
 
-The LLC negotiates the parameters for and manages a logical link between two endpoints.
-It is assumed that two endpoints executing the LLC have already discovered each other
-and configured their lower-layer transport mechanism to enable end-to-end communication.
-A single session is establish over this link for end-to-end control. This session is
-used to control, for example, the link MTU size before an encrypted channel has been
-setup between the two endpoints. Within this session, an encrypted control channel can
-be established for further control messages; each endpoint is authenticated during this
-stage.
+It is assumed that two endpoints executing the LLC have already
+discovered each other and configured their lower-layer transport
+mechanism to enable bidirectional communication.  A single session is
+establish over this link for end-to-end control. This session is used
+to control, for example, the link MTU size before encryption is turned
+on between the two endpoints. Within this session, encrypted logical
+channels, called threads, are established both for control and for
+production traffic. Each endpoint is authenticated during this stage.
 
+<!--
 Finally, after the encrypted control channel is established, per-protocol communication
 channels, or threads, can be instantiated within the context of the link session.
+-->
 <!-- A session manager is responsible for handling the control messages exchanged between
 endpoints in the context of a given session. -->
-
+<!--
 Threads are used to send protocol-specific traffic go a remote "packet
 handler". For example, two endpoints with an established session could
 create two separate threads for CCNx and NDN traffic. Threads are
-unidirectional but are often used in pairs (to have bidirectionality).
+unidirectional but are often used in pairs (to have bidirectionality). -->
 
 The hierarchy of control in the LLC is shown below.
 
@@ -96,33 +100,15 @@ The hierarchy of control in the LLC is shown below.
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
-All control (e.g., negotiation) messages follow RPC-style model. That is, a RPC-request
+All control (e.g., negotiation) messages follow an RPC-style model. That is, a RPC-request
 has an identity for the parent context (e.g., the session), an action (verb) that identifies
 the action to be done, and additional parameters. Each RPC-request is followed by
 an RPC-response which specifies the result of the operation, e.g., an OK flag
-or a FAIL flag with some useful error information. All protocol-specific traffic
+or a FAIL flag with some useful error information.
+
+<!-- All protocol-specific traffic
 which is sent over a LLC-configured thread is placed in a datagram frame.
-
-The goal of the LLC and its session manager is to expose an API to endpoints that enables
-them to create link connections to external endpoints to exchange ICN protocol-specific
-traffic. For example, the API of this LLC session manager might be:
-
-udp_connect(ip_address string, port int, protocolIdentifier string)
-tcp_connect(ip_address string, port int, protocolIdentifier string)
-ip_connect(ip_address string, protocolIdentifier string)
-mac_connect(mac_address string, protocolIdentifier string)
-
-In all cases, the "protocolIdentifier" parameter is a well-defined name for the
-ICN protocol to use. For example,
-
-protocolIdentifier = {'ccnx10, ndn'}
-
-<!-- Cast (who plays a role), notation
-
-  - assumption about the transport channel (=link), "magic that happened before"
-  - "pipeline picture" - link, session, session manager, threads
-  - rpc pattern, negotiation style
-  - "outer entities", its API towards the session manager -->
+-->
 
 Scope of document:
 
@@ -142,29 +128,34 @@ Definitions and Notation
 
 The following terms are used:
 
-endpoint: An endpoint which is capable of supporting at least one ICN protocol.
+endpoint: A (session) endpoint which is capable of supporting at least
+one ICN protocol, for example an IP node reachable via UDP.
 
-link: A logical connection between two endpoints.
+link: A bidirectional datagram service between two endpoints (e.g., UDP, Ethernet).
 
+<!--
 sender: An endpoint which is sending a message from to another session over a link.
 
 sender: An endpoint which is receiving a message from another session over a link.
+-->
 
-session: A semi-permanent context in which information is (possibly encrypted and) exchanged
+session: A semi-permanent context in which (possibly encrypted) information is exchanged
 over a link between two endpoints.
 
 session manager: A control unit responsible for managing a session between two endpoints.
 
-thread: An isolated and ephemeral context managed by a session manager in which
-ICN-specific traffic is sent between two endpoints.
+thread, or logical link: An isolated and ephemeral context managed by a session manager in which encrypted
+traffic is sent between two endpoints.
 
 RPC-request: A request to perform an RPC action from a sender to a receiver.
 
 RPC-response: A response to an RPC-request sent from RPC-request receiver to the
 RPC-request sender.
 
-datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
+<!-- datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
 interest or content object).
+-->
+
 
 LLC Concepts
 ============
@@ -191,6 +182,13 @@ cast
 ----
 [cft], incl picture
 
+<!-- Cast (who plays a role), notation
+
+  - assumption about the transport channel (=link), "magic that happened before"
+  - "pipeline picture" - link, session, session manager, threads
+  - rpc pattern, negotiation style
+  - "outer entities", its API towards the session manager -->
+
 ~~~
 the fig
 ~~~
@@ -201,11 +199,13 @@ negotiation style
 -----------------
 [cft]
 
-Endpoints Entities
-------------------
-Each endpoint has an associated entity that is responsible for initating links
-between other endpoints to exchange ICN traffic. Each of these entities interfaces
-with the LLC protocol using the LLC API, which is outlined below:
+Endpoints Entities (and an API for ICN-LLC)
+-------------------------------------------
+
+The goal of the LLC and its session manager is to expose an API that
+enables a run-time environment to connect local ICN software like a CCNx forwarder to a
+remote peer, reusing the LLC's secured link. For example, the API could be structured 
+as follows:
 
 int udp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
 to the endpoint at the specified IP address and port using UDP as the transport mechanism.
@@ -227,6 +227,22 @@ given link using the function specified below.
 
 void connection_teardown(connectionId int): teardown and destroy all state associated with the
 specified connection ID.
+
+<!--
+ For example, the API of this LLC session manager might be:
+
+udp_connect(ip_address string, port int, protocolIdentifier string)
+tcp_connect(ip_address string, port int, protocolIdentifier string)
+ip_connect(ip_address string, protocolIdentifier string)
+mac_connect(mac_address string, protocolIdentifier string)
+
+In all cases, the "protocolIdentifier" parameter is a well-defined name for the
+ICN protocol to use. For example,
+
+protocolIdentifier = {'ccnx10, ndn'}
+-->
+
+
 
 Link-level RPC and Logical Link Traffic
 =======================================
