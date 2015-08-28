@@ -229,23 +229,205 @@ link-level RPC (and the three msgs)
 Negotiation Tasks
 =================
 
+We now describe the major negotiation tasks (message exchanges) that make up
+the LLC protocol. For simplicity, we refer to each of the endpoints in the
+protocol as P1 and P2.
+
 Session Initialization
 ----------------------
 
 The session initialization task is the first step in establishing and using a link
-between two endpoints.
+between two endpoints. Assuming a communication link for the underlying transport protocol
+is established, it is done by the following RPC exchange.
 
-Secure Association Establishment
---------------------------------
+~~~
+P1                                                 P2
+        rpc-request(id=(SID-1), "start-session”)
+            ---------------------------->  
+
+                                            On success:
+      rpc-response: (id=(SID-1), result(OK, SID-2))
+            <----------------------------
+
+                                            On failure:
+      rpc-response(id=(SID-1), result(FAIL, <reason>))
+            <----------------------------
+~~~
+{: #session-init title="Session Initialization Message."}
+
+The session identifier SID is treated as the tuple (SID-1, SID-2)
+after the completion of this exchange.
 
 Inspection
 ----------
 
+Inspection messages may be used to recover generic information
+from an endpoint, e.g., the preferred MTU size. The RPC exchange
+for an inspection message is as follows.
+
+~~~
+P1                                                         P2
+    rpc-request(id=(SID, TID-0, nonce), “lookup(MTU)")
+            ---------------------------->  
+
+                                                   On success:
+rpc-response(id=(SID, TID-0, nonce),  result(OK, <MTU value>))
+            <----------------------------
+
+                                                   On failure:
+rpc-response(id=(SID, TID-0, nonce),  result(FAIL, <reason>))
+            <----------------------------
+~~~
+{: #inspection-msg title="Inspection (for MTU)."}
+
+In this context, TID-0 is the standard control channel for
+the session. All threads that are spawned in the context of session
+SID will be assigned different identifiers.
+
+Inspection messages may be used to query any well-named object from
+the recipient endpoint. In the example above, the inspection for the MTU
+would usually occur before establishing a secure session association (SA).
+Thus, the contents of the RPC request and response are unencrypted.
+However, after a SA is established, all inspection messages will be
+encrypted like other link traffic.
+
+Secure Association Establishment
+--------------------------------
+
+The secure association (SA) establishment message exchange is used to
+create a secure session over a given link. This enables all subsequent
+traffic to be authenticated and encrypted. The goal is for each endpoint
+to authenticate the entity running on the other endpoint of a given link,
+and to then establish shared symmetric keys to perform authenticated
+encryption of all traffic that follows the exchange.
+Currently, we specify a simple challenge-response mutual authentication protocol.
+This can be replaced with any functionally equivalent protocol.
+
+~~~
+P1                                                                P2
+    rpc-request(id=(SID, TID-0, nonceA),
+      “prove-identity(nil, <optionsA>, <keyshareA>,
+      NULL, <challengeA-1, challengeA-2>)”)
+            ---------------------------->  
+
+    rpc-request(id=(SID, TID-0, nonceB),
+      “prove-identity(nonceA, <optionsB>, <keyshareB>,
+      NULL, <challengeB-1, challengeB-2>)”)
+            <----------------------------
+
+    rpc-response(id=(SID, TID-0, nonceB),
+      result=(OK, challenge-response(signature(key-P1, challengeB-1),
+      encrypt(keyAB, (challengeB-2, nonceB)))
+            ---------------------------->
+
+    rcp-response(id=(SID, TID-0, nonceA),
+      result=(OK, challenge-response(signature(key-P2, challengeA-1),
+      encrypt(keyAB, (challengeA-2, nonceA)))
+           <----------------------------
+~~~
+{: #sa-init title="Session Initialization Message."}
+
+In the first message, the value nil is used to represent an empty nonce.
+
+optionsA and optionsB are key-value data structure that contain the following
+information, at a minimum:
+
+* Preferred identity information (e.g., the form of signature algorithm to use
+    when processing the challenge and response).
+* Diffie Hellman group parameters
+
+The key key-Pi = private key of Pi or key shared between P1 and P2. Lastly,
+keyAB is the ket material derived from the output of the Diffie Hellman exchange
+with the shares keyshareA and keyshareB. That is, logically,
+
+    keyAB = DH(keyshareA, keyshareB)
+
+Note that the above exchange only includes the success case. When a failure occurs,
+the recipient replies with an error code as in the Inspection message case and
+terminates the session state information.
+
 Set MTU
 -------
 
-Create and Destroy Logical Links
---------------------------------
+Setting the MTU is a standard message in the LLC protocol that has
+the following RPC exchange format.
+
+~~~
+P1                                                   P2
+            rpc-request(id=(SID, TID-0, nonce),
+              “Enc(keyAB, set(MTU, <value>))”)
+            ---------------------------->  
+
+                                            On success:
+            rpc-response(id=(SID, TID-0, nonce),
+              Enc(keyAB, result(OK, (<value>)))
+            <----------------------------
+
+                                            On failure:
+            rpc-response(id=(SID, TID-0, nonce),
+              Enc(keyAB, result(FAIL, <reason>)))
+            <----------------------------
+~~~
+{: #set-mtu-msg title="Set the MTU."}
+
+Create and Destroy Logical Links (Threads)
+------------------------------------------
+
+After a session and SA have been established, the protocol-specific links (threads) must be
+created. This is done with the following exchange.
+
+~~~
+P1                                                    P2
+            rpc-request(id=(SID, TID-0, nonce),
+              Enc(keyAB, “create-thread(TID-5a, key,
+              'icn-protocol-identifier')”))
+            ---------------------------->  
+
+                                             On success:
+            rpc-response(id=(SID, TID-0, nonce),
+              Enc(keyAB, result=(OK, TID-5b)))
+            <----------------------------
+
+                                             On failure:
+            rpc-response(id=(SID, TID-0, nonce),
+              Enc(keyAB, result=(FAIL, <reason>)))
+            <----------------------------
+~~~
+{: #thread-create title="Logical Link (Thread) Creation."}
+
+Note that this is an imperative procedure. Since each thread is owned
+and controlled by the session manager, it is sufficient for the session
+manager to simply derive a new encryption key "key" for the thread
+during creation. In other words, it is not necessary to perform another
+multi-round Diffie Hellman key exchange.
+
+Also, in this case, the failure reasons could be one of:
+
+* "Protocol not supported"
+* "Invalid key size"
+
+Currently, each thread will use the same encryption algorithm and parameters
+for their respective traffic. This could be changed by allowing endpoints
+to negotiate these parameters during the thread creation exchange.
+
+Finally, when a thread is finished, it must be destroyed and all state
+must be recycled. This is done with the following exchange.
+
+~~~
+P1                                                  P2
+            rpc-request(id=(SID, TID-0, nonce),
+              Enc(keyAB, “destroy-thread(TID-5)”))
+            ---------------------------->  
+
+            rpc-response(id=(SID, TID-0, nonce),
+              Enc(keyAB, result=(OK, TID-5)))
+            <----------------------------
+~~~
+{: #thread-destroy title="Logical Link (Thread) Destruction."}
+
+After this exchange, both parties tear down and recycle their local state.
+Moreover, this destroy request is idempotent; attempting to destroy a non-existent
+thread will yield an OK response from the recipient.
 
 <!-- initSession, startSecureAssociation, inspection, setMTU, create and destroy logical links -->
 
