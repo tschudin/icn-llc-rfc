@@ -204,7 +204,7 @@ Endpoints Entities (and an API for ICN-LLC)
 
 The goal of the LLC and its session manager is to expose an API that
 enables a run-time environment to connect local ICN software like a CCNx forwarder to a
-remote peer, reusing the LLC's secured link. For example, the API could be structured 
+remote peer, reusing the LLC's secured link. For example, the API could be structured
 as follows:
 
 int udp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
@@ -227,22 +227,6 @@ given link using the function specified below.
 
 void connection_teardown(connectionId int): teardown and destroy all state associated with the
 specified connection ID.
-
-<!--
- For example, the API of this LLC session manager might be:
-
-udp_connect(ip_address string, port int, protocolIdentifier string)
-tcp_connect(ip_address string, port int, protocolIdentifier string)
-ip_connect(ip_address string, protocolIdentifier string)
-mac_connect(mac_address string, protocolIdentifier string)
-
-In all cases, the "protocolIdentifier" parameter is a well-defined name for the
-ICN protocol to use. For example,
-
-protocolIdentifier = {'ccnx10, ndn'}
--->
-
-
 
 Link-level RPC and Logical Link Traffic
 =======================================
@@ -317,12 +301,8 @@ Negotiation Tasks
 We now describe the major negotiation tasks (RPC calls) that make up
 the LLC protocol.  Any side can initiate an RPC at any time. It is
 suggested to limit the number of RPCs that one side issues in parallel
-to four (including nesting).
-
-{REMOVE? For simplicity, we refer to each of the endpoints in the
-protocol as Q for Questioner and R for Responder. Or use P1 and P2, or
-P1 and EP2 for endpoint?}
-
+to four (including nesting). For simplicity, we refer to each of the endpoints
+in the protocol as Q for Questioner and R for Responder.
 
 Session Initialization
 ----------------------
@@ -333,12 +313,12 @@ for the underlying transport protocol is established, it is done by
 the following RPC exchange.
 
 ~~~
-  --> rpc-request(rid(SID-1,0), nonce), START-SESSION, list())
+Q-->R: rpc-request(rid(SID-1,0), nonce), START-SESSION, list())
 
                                                  On success:
-  <-- rpc-response(rid(SID-1,0), nonce), OK, list(SID-2))
+Q<--R: rpc-response(rid(SID-1,0), nonce), OK, list(SID-2))
                                                  On failure:
-  <-- rpc-response(rid(SID-1,0), nonce), FAIL, list(<reason>))
+Q<--R: rpc-response(rid(SID-1,0), nonce), FAIL, list(<reason>))
 ~~~
 {: #session-init title="Session Initialization Message Exchange."}
 
@@ -350,8 +330,11 @@ Note that session initialization leaves the two endpoints in an
 unsecure state until they have executed the secure association task
 (see below).
 
-{Question: how to handle/mitigate an attcker injecting
-such "reset" messages?|
+{Question: how to handle/mitigate an attacker injecting
+such "reset" messages?}
+{CAW: each side could store a hash preimage that is revealed
+during the SA step, but this induces state. If these two operations
+are separated, then some state is necessary.}
 
 Inspection
 ----------
@@ -361,12 +344,12 @@ from an endpoint, e.g., the preferred MTU size. The RPC exchange
 for an inspection message is as follows.
 
 ~~~
-  --> rpc-request(rid(SID, nonce), “lookup", list("/conf/PreferredMTU"))
+Q-->R: rpc-request(rid(SID, nonce), “lookup", list("/conf/PreferredMTU"))
 
                                                    On success:
-  <-- rpc-response(rid(SID, nonce), OK, list(<MTU value>))
+Q<--R: rpc-response(rid(SID, nonce), OK, list(<MTU value>))
                                                    On failure:
-  <-- rpc-response(rid(SID, nonce), FAIL, list(<reason>))
+Q<--R: rpc-response(rid(SID, nonce), FAIL, list(<reason>))
 ~~~
 {: #inspection-msg title="Remote inspection (for MTU)."}
 
@@ -398,20 +381,21 @@ Note also that encrypt(K,M) stands for the ciphertext resulting from
 applying key K to message M.
 
 ~~~
-  --> rpc-request(rid(SID, nonceA), “prove-identity",
+Q-->R: rpc-request(rid(SID, nonceA), “prove-identity",
                   list(nil, <optionsA>, <keyshareA>,
                        NULL, <challengeA-1, challengeA-2>))
 
-      <-- rpc-request(rid(SID, nonceB), “prove-identity"
-                      list((nonceA, <optionsB>, <keyshareB>,
-                           NULL, <challengeB-1, challengeB-2>))
-      --> rpc-response(rid(SID, nonceB), OK,
-                      list(signature(key-P1, challengeB-1),
-                           encrypt(keyAB, list(TIDa, challengeB-2, nonceB)))
+Q<--R: rpc-request(rid(SID, nonceB), “prove-identity"
+                  list((nonceA, <optionsB>, <keyshareB>,
+                       NULL, <challengeB-1, challengeB-2>))
 
-  <-- rcp-response(rid(SID, nonceA), OK,
-                   list((signature(key-P2, challengeA-1),
-                        encrypt(keyAB, list(TIDb, challengeA-2, nonceA)))
+Q-->R: rpc-response(rid(SID, nonceB), OK,
+                  list(signature(key-Q, challengeB-1),
+                  encrypt(keyAB, list(TIDa, challengeB-2, nonceB)))
+
+Q<--R: rpc-response(rid(SID, nonceA), OK,
+                   list((signature(key-R, challengeA-1),
+                   encrypt(keyAB, list(TIDb, challengeA-2, nonceA)))
 ~~~
 {: #sa-init title="Secure Association with two challenge-response rounds."}
 
@@ -424,7 +408,7 @@ information, at a minimum:
     when processing the challenge and response).
 * Diffie Hellman group parameters
 
-The key key-Pi = private key of Pi or key shared between P1 and P2.
+The key key-{Q,R} is private key of {Q,R} or key shared between Q and R.
 
 Lastly, keyAB is the key material derived from the output of the
 Diffie Hellman exchange with the shares keyshareA and keyshareB. That
@@ -437,30 +421,30 @@ digram above), the recipient replies with an error code (in clear) as
 in the Inspection message case and does not establish a new (or
 replace an old) secured logical link.
 
-<!-- was: terminates the session state information -->
-
 Otherwise the secure association request succeeded and from this point
 in time on the two endpoints will exchange their control messages in
 encrypted form inside threads.
 
 To this end, the protocol above exchanged and authenticated two
-endpoint-chosen numbers TIDa and TIDb.  The thread starting from the
-side that chose the TIDa value will use thread ID TIDAB=(TIDa,
-TIDb) while the other side can use thread TIDBA=(TIDb,TIDa) to reply.
+endpoint-chosen numbers TIDa and TIDb. The thread starting from the
+side that chose the TIDa value will use thread ID TIDAB = (TIDa,
+TIDb) while the other side can use thread TIDBA = (TIDb,TIDa) to reply.
 
 For example, the remote inspection RPC can now be executed in a secured
 fashion as follows:
 
-  --> llt-message(TIDAB, encrypt(keyAB, rpc-request(rid(SID, nonce),
+~~~
+Q-->R: llt-message(TIDAB, encrypt(keyAB, rpc-request(rid(SID, nonce),
                                   “lookup", list("/conf/PreferredMTU"))))
 
-                                                   On success:
-  <-- llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                                                          On success:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
                                   OK, list(<MTU value>))))
 ~~~
+{: #secure-inspection title="Thread-Local Encapsulated RPC."}
 
-//// I stoped editing here (cft)
-
+<!-- //// I stoped editing here (cft) -->
+<!-- //// OK: I reviewed the changes above and integrated my comments -->
 
 Set MTU
 -------
@@ -469,49 +453,45 @@ Setting the MTU is a standard message in the LLC protocol that has
 the following RPC exchange format.
 
 ~~~
-P1                                                   P2
-            rpc-request(id=(SID, TID-0, nonce),
-              “Enc(keyAB, set(MTU, <value>))”)
-            ---------------------------->  
+Q-->R: llt-message(TIDAB, encrypt(keyAB,
+                   rpc-request(rid(SID, nonce), "set(MTU, <value>))”))
 
-                                            On success:
-            rpc-response(id=(SID, TID-0, nonce),
-              Enc(keyAB, result(OK, (<value>)))
-            <----------------------------
-
-                                            On failure:
-            rpc-response(id=(SID, TID-0, nonce),
-              Enc(keyAB, result(FAIL, <reason>)))
-            <----------------------------
+                                                            On success:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   OK, <value>)))
+                                                            On failure:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   FAIL, <reason>)))
 ~~~
 {: #set-mtu-msg title="Set the MTU."}
 
 Create and Destroy Logical Links (Threads)
 ------------------------------------------
 
-After a session and SA have been established, the protocol-specific links (threads) must be
-created. This is done with the following exchange.
+After a session and SA have been established, the protocol-specific links
+(threads) must be created. This is done with the following exchange.
 
 ~~~
-P1                                                    P2
-            rpc-request(id=(SID, TID-0, nonce),
-              Enc(keyAB, “create-thread(TID-5a, key,
-              'icn-protocol-identifier')”))
-            ---------------------------->  
+Q-->R: llt-message(TIDAB, encrypt(keyAB,
+                   rpc-request(rid(SID, nonce), “create-thread(TID-5a, key-5QR,
+                   'icn-protocol-identifier')”)))
 
                                              On success:
-            rpc-response(id=(SID, TID-0, nonce),
-              Enc(keyAB, result=(OK, TID-5b)))
-            <----------------------------
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   OK, TID-5b)))
 
                                              On failure:
-            rpc-response(id=(SID, TID-0, nonce),
-              Enc(keyAB, result=(FAIL, <reason>)))
-            <----------------------------
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   FAIL, <reason>)))
 ~~~
 {: #thread-create title="Logical Link (Thread) Creation."}
 
-Note that this is an imperative procedure. Since each thread is owned
+This creates a new thread whose identifier is a function of the tuple (TID-5a, TID-5b).
+The questioner Q will use the thread ID TID5Q = (TID-5a, TID-5b), whereas the responder
+R will use the thread ID TID5R = (TID-5b, TID-5a). All logical link traffic for this
+thread will then use these identifiers to refer to this newly created thread.
+
+Also, note that this is an imperative procedure. Since each thread is owned
 and controlled by the session manager, it is sufficient for the session
 manager to simply derive a new encryption key "key" for the thread
 during creation. In other words, it is not necessary to perform another
@@ -530,22 +510,16 @@ Finally, when a thread is finished, it must be destroyed and all state
 must be recycled. This is done with the following exchange.
 
 ~~~
-P1                                                  P2
-            rpc-request(id=(SID, TID-0, nonce),
-              Enc(keyAB, “destroy-thread(TID-5)”))
-            ---------------------------->  
+Q-->R: llt-message(TID5Q, encrypt(key-5QR,
+                   rpc-request(rid(SID, nonce), “destroy-thread(TID-5)”)))
 
-            rpc-response(id=(SID, TID-0, nonce),
-              Enc(keyAB, result=(OK, TID-5)))
-            <----------------------------
+Q<--R: llt-message(TID5R, encrypt(key-5QR, rpc-response(rid(SID, nonce), OK)))
 ~~~
 {: #thread-destroy title="Logical Link (Thread) Destruction."}
 
 After this exchange, both parties tear down and recycle their local state.
 Moreover, this destroy request is idempotent; attempting to destroy a non-existent
 thread will yield an OK response from the recipient.
-
-<!-- initSession, startSecureAssociation, inspection, setMTU, create and destroy logical links -->
 
 Encoding (of RPC and parameters)
 ================================
@@ -558,7 +532,6 @@ RPC parameters
 
 three msg headers
 -----------------
-
 
 Security Considerations
 =======================
