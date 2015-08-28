@@ -175,7 +175,7 @@ established before the protocol is executed. This includes settings that,
 for example, enable bidirectional firewall traversal.
 
 * The underlying link protocol provides the most basic ability to encapsulate
-and move an arbitrary sized payload from one endpoint to another. 
+and move an arbitrary sized payload from one endpoint to another.
 
 * Each endpoint has an identity and can prove its identity to the other endpoints
 associated with links.
@@ -213,7 +213,7 @@ ICN protocol to use. For example,
 protocolIdentifier = {'ccnx10, ndn'}
 
 The return value for these functions is a unique identifier that the LLC session manager
-uses to identify links and sessions. It is used when an entity wishes to teardown a 
+uses to identify links and sessions. It is used when an entity wishes to teardown a
 given link using the function specified below.
 
 void connection_teardown(connectionId int): teardown and destroy all state associated with the
@@ -224,12 +224,30 @@ link-level RPC (and the three msgs)
 
 [cft]
 
+@Christian: maybe you can also describe the notation of the language here? e.g., P1->P2: XXX means "P1 sends XXX to P2"
 
 Negotiation Tasks
 =================
 
-a) [cw]
---
+Session Initialization
+----------------------
+
+The session initialization task is the first step in establishing and using a link
+between two endpoints.
+
+Secure Association Establishment
+--------------------------------
+
+Inspection
+----------
+
+Set MTU
+-------
+
+Create and Destroy Logical Links
+--------------------------------
+
+<!-- initSession, startSecureAssociation, inspection, setMTU, create and destroy logical links -->
 
 Encoding (of RPC and parameters)
 ================================
