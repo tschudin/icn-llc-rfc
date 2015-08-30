@@ -89,15 +89,15 @@ unidirectional but are often used in pairs (to have bidirectionality). -->
 The hierarchy of control in ICN-LLC is shown below.
 
 ~~~
-+------------------------------------------------+
-|        1 Link (bidirectional transport)        |
-|  +------------------------------------------+  |
-|  |     1 Session                            |  |
-|  |   +-----------------------------------+  |  |
-|  |   | N Threads (= undirect. log. link) |  |  |
-|  |   +-----------------------------------+  |  |
-|  +------------------------------------------+  |
-+------------------------------------------------+
+  +------------------------------------------------+
+  |        1 Link (bidirectional transport)        |
+  |  +------------------------------------------+  |
+  |  |     1 Session                            |  |
+  |  |   +-----------------------------------+  |  |
+  |  |   | N Threads (= undirect. log. link) |  |  |
+  |  |   +-----------------------------------+  |  |
+  |  +------------------------------------------+  |
+  +------------------------------------------------+
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
@@ -246,6 +246,45 @@ identifier):
 ~~~
 
 
+Client work flow
+----------------
+
+ICN clients e.g., forwarders, will use the API as follows. A NDN router
+waiting for session establishment from other peers would issue this
+sequence of actions (without showing error handling):
+
+~~~
+   llc = icnllc_init(&myUDP, &myCredentials);
+   ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
+   // ... serve thread establishment in NDNupcall()
+   icnllc_deregister(ndn);
+   icnllc_fini(llc);
+~~~
+
+A CCNx router wanting to establish a secure link to a peer would be
+programmed as follows:
+
+~~~
+   llc = icnllc_init(&myUDP, &myCredentials);
+   s = icnllc_openSession(llc, &remoteUDP, &myTrustAnchor);
+
+   peer = icnllc_openThread(s, "/proto/icn/ccnx.2015");
+   // ... encrypted and authenticated write and read:
+   // icnllc_write(peer, data, datalen);
+   // icnllc_read(peer, &buf, sizeof*buf);
+
+   // parallel thread for client-level remote mgmt actions (also secured):
+   peerMgmt = icnllc_openThread(s, "/proto/icn/ccnx.2015.mgmt");
+   // ...
+   icnllc_closeThread(peerMgmt);
+
+   icnllc_closeThread(peer);
+   icnllc_closeSession(s)
+   icnllc_fini(llc);
+~~~
+
+
+
 Link-level RPC and Logical Link Traffic
 =======================================
 
@@ -271,6 +310,9 @@ will be represented as
   f1(f2, more fields here)
 ~~~
 
+That is, a parethesis pair is used as a notation for a list. The empty
+list is either shown as () or NIL.
+
 We first show the data structures corresponding to the three message types
 before explaining each of them.
 
@@ -279,10 +321,10 @@ before explaining each of them.
   rpc-response(RID, OK|FAIL, result-list|reason-list)
   llt-message (LID, blob)
 
-  RID = rid(SID, nonce)   # request ID
-  LID = lid(SID, TID)     # logical link ID
-  SID = sid(val1, val2)   # session ID
-  TID = tid(val1, val2)   # thread ID
+  RID = (SID, nonce)         # request ID
+  LID = (SID, TID)           # logical link ID
+  SID = (intval1, intval2)   # session ID
+  TID = (intval1, intval2)   # thread ID
 ~~~
 {: #llc-msgs title="The three message types of ICN-LLC."}
 
@@ -290,8 +332,9 @@ RPC-request
 -----------
 
 (See also Figure [#llc-msgs]) An RPC-request message carries an ID
-that identifyies the request instance (RID) as well as a verb and an
-optional payload with the list of parameters.
+that identifyies the request instance (RID) as well as a verb (= name
+of the remote procedure) and an optional payload with the list of
+parameters.
 
 The RID carries two pieces of information: The current session's ID
 (SID) comes first, followed by a nonce. The role of the SID is to
@@ -316,15 +359,16 @@ Logical Link Traffic
 --------------------
 
 Logical Link Traffic refers to the messages that travel inside a
-logical link (called thread). This message type has three fields: tag,
+logical link (called thread). This message type has two fields:
 logical link ID and payload.
 
 The logical link is identified by a tuple that refers to the session
 context (SID) as well as the thread to which this message belongs
-to. In fact, the <SID, TID> tuple is a "network pointer" into the
+to. In fact, the (SID, TID) tuple is a "network pointer" into the
 other end's function space [NetPtrs]. The thread ID is also a tuple,
-in this case of two numbers. Often, threads are used in pairs in which
-case the tuple's values are swapped.
+in this case of two numbers. Often, threads are used in pairs (for
+bidirectional interconnection of ICN clients) in which case the
+tuple's values are swapped.
 
 
 Negotiation Tasks
@@ -333,7 +377,11 @@ Negotiation Tasks
 We now describe the major negotiation tasks (RPC calls) that make up
 the LLC protocol.
 
-{XXX.cft: say something about the negotiation style: select/set instead of haggle}
+{XXX.cft: say something about the negotiation style: select/set
+instead of haggle}
+
+{XXX.cft: say something about the required RPC failure semantics
+(at-least-once vs at-most-once)}
 
 Any side can initiate a remote procedure call at any time. It is
 suggested to limit the number of RPCs that one side issues in parallel
@@ -350,17 +398,17 @@ for the underlying transport protocol is established, it is done by
 the following RPC exchange.
 
 ~~~
-Q-->R: rpc-request(rid(SID-1,0), nonce), START-SESSION, list())
+Q-->R: rpc-request((SID-1,0), nonce), START-SESSION, ())
 
-                                                 On success:
-Q<--R: rpc-response(rid(SID-1,0), nonce), OK, list(SID-2))
-                                                 On failure:
-Q<--R: rpc-response(rid(SID-1,0), nonce), FAIL, list(<reason>))
+On success:
+  Q<--R: rpc-response((SID-1,0), nonce), OK, list(SID-2))
+On failure:
+  Q<--R: rpc-response((SID-1,0), nonce), FAIL, list(<reason>))
 ~~~
 {: #session-init title="Session Initialization Message Exchange."}
 
 After that exchange was executed, both ends will use the session ID
-consisting of SID-1 and SID-2 i.e., sid(SID-1,SID-2) in order to refer
+consisting of SID-1 and SID-2 i.e., (SID-1, SID-2) in order to refer
 to this new session. In the following we abbreviate this tuple to SID.
 
 Note that session initialization leaves the two endpoints in an
@@ -373,20 +421,20 @@ such "reset" messages?}
 during the SA step, but this induces state. If these two operations
 are separated, then some state is necessary.}
 
-Inspection
-----------
+Inspection (Get MTU)
+--------------------
 
 Inspection messages may be used to recover generic information
 from an endpoint, e.g., the preferred MTU size. The RPC exchange
 for an inspection message is as follows.
 
 ~~~
-Q-->R: rpc-request(rid(SID, nonce), “lookup", list("/conf/PreferredMTU"))
+Q-->R: rpc-request(SID, nonce), “lookup", ("/conf/preferredMTU"))
 
-                                                   On success:
-Q<--R: rpc-response(rid(SID, nonce), OK, list(<MTU value>))
-                                                   On failure:
-Q<--R: rpc-response(rid(SID, nonce), FAIL, list(<reason>))
+On success:
+  Q<--R: rpc-response((SID, nonce), OK, (<MTU value>))
+On failure:
+  Q<--R: rpc-response((SID, nonce), FAIL, (<reason>))
 ~~~
 {: #inspection-msg title="Remote inspection (for MTU)."}
 
@@ -414,38 +462,40 @@ Note that the SA involves nested RPCs: The responder to the initial
 RPC request will do an RPC in reverse direction in order to
 authenticate the requestor.
 
-Note also that encrypt(K,M) stands for the ciphertext resulting from
-applying key K to message M.
+Note also that Encrypt(K,M) stands for the ciphertext resulting from
+applying key K to message M and Signature(K,M) for a signature of M
+using key KL.
 
 ~~~
-Q-->R: rpc-request(rid(SID, nonceA), “prove-identity",
-                  list(nil, <optionsA>, <keyshareA>,
-                       NULL, <challengeA-1, challengeA-2>))
+Q-->R: rpc-request((SID, nonceA), “prove-identity",
+                   (NIL, <optionsA>, <keyshareA>,
+                    NIL, <challengeA-1, challengeA-2>))
 
-Q<--R: rpc-request(rid(SID, nonceB), “prove-identity"
-                  list((nonceA, <optionsB>, <keyshareB>,
-                       NULL, <challengeB-1, challengeB-2>))
+Q<--R: rpc-request((SID, nonceB), “prove-identity"
+                   (nonceA, <optionsB>, <keyshareB>,
+                    NIL, <challengeB-1, challengeB-2>))
 
-Q-->R: rpc-response(rid(SID, nonceB), OK,
-                  list(signature(key-Q, challengeB-1),
-                  encrypt(keyAB, list(TIDa, challengeB-2, nonceB)))
+Q-->R: rpc-response((SID, nonceB), OK,
+                    (Signature(key-Q, challengeB-1),
+                     Encrypt(keyAB, (TIDa, challengeB-2, nonceB)))
 
-Q<--R: rpc-response(rid(SID, nonceA), OK,
-                   list((signature(key-R, challengeA-1),
-                   encrypt(keyAB, list(TIDb, challengeA-2, nonceA)))
+Q<--R: rpc-response((SID, nonceA), OK,
+                    (Signature(key-R, challengeA-1),
+                     Encrypt(keyAB, (TIDb, challengeA-2, nonceA)))
 ~~~
 {: #sa-init title="Secure Association with two challenge-response rounds."}
 
-In the first message, the value nil is used to represent an empty nonce.
+In the first message, the value NIL is used to represent an empty nonce.
 
-optionsA and optionsB are key-value data structure that contain the following
-information, at a minimum:
+The fields named optionsA and optionsB are key-value data structures
+that contain the following information, at a minimum:
 
 * Preferred identity information (e.g., the form of signature algorithm to use
     when processing the challenge and response).
 * Diffie Hellman group parameters
 
-The key key-{Q,R} is private key of {Q,R} or key shared between Q and R.
+The key key-{Q,R} is a private key of {Q,R} or a symmetric key
+shared between Q and R.
 
 Lastly, keyAB is the key material derived from the output of the
 Diffie Hellman exchange with the shares keyshareA and keyshareB. That
@@ -454,7 +504,7 @@ is, logically,
     keyAB = DH(keyshareA, keyshareB)
 
 When a failure occurs in the secure association RPC (not shown in the
-digram above), the recipient replies with an error code (in clear) as
+diagram above), the recipient replies with an error code (in clear) as
 in the Inspection message case and does not establish a new (or
 replace an old) secured logical link.
 
@@ -464,24 +514,26 @@ encrypted form inside threads.
 
 To this end, the protocol above exchanged and authenticated two
 endpoint-chosen numbers TIDa and TIDb. The thread starting from the
-side that chose the TIDa value will use thread ID TIDAB = (TIDa,
-TIDb) while the other side can use thread TIDBA = (TIDb,TIDa) to reply.
+side that chose the TIDa value, will use thread ID TIDAB = (TIDa,
+TIDb) while the other side can use thread identifier TIDBA =
+(TIDb,TIDa) to reply.  Subsequently we will refer to the respective
+logical link identifiers that result from this as LIDAB=(SID,TIDAB)
+and LIDBA=(SID,TIDBA)
 
 For example, the remote inspection RPC can now be executed in a secured
 fashion as follows:
 
 ~~~
-Q-->R: llt-message(TIDAB, encrypt(keyAB, rpc-request(rid(SID, nonce),
-                                  “lookup", list("/conf/PreferredMTU"))))
-
-                                                          On success:
-Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
-                                  OK, list(<MTU value>))))
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce),
+                               “lookup", ("/conf/preferredMTU"))))
+On success:
+Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                   rpc-response((SID, nonce),
+                                OK, (<MTU value>))))
 ~~~
 {: #secure-inspection title="Thread-Local Encapsulated RPC."}
 
-<!-- //// I stoped editing here (cft) -->
-<!-- //// OK: I reviewed the changes above and integrated my comments -->
 
 Set MTU
 -------
@@ -490,51 +542,58 @@ Setting the MTU is a standard message in the LLC protocol that has
 the following RPC exchange format.
 
 ~~~
-Q-->R: llt-message(TIDAB, encrypt(keyAB,
-                   rpc-request(rid(SID, nonce), "set(MTU, <value>))”))
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "set", ("/conf/MTU", <value>))))
 
-                                                            On success:
-Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
-                   OK, <value>)))
-                                                            On failure:
-Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
-                   FAIL, <reason>)))
+On success:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (<value>))))
+On failure:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (<reason>))))
 ~~~
 {: #set-mtu-msg title="Set the MTU."}
 
-Create and Destroy Logical Links (Threads)
-------------------------------------------
 
-After a session and SA have been established, the protocol-specific links
-(threads) must be created. This is done with the following exchange.
+Create Logical Link (thread)
+----------------------------
+
+After a session and SA have been established, the protocol-specific
+links (threads) must be created. This is done with the following
+exchange. The number 5 shown below is arbitrary and signals for this
+specific task that Q or R can choose their part of the thread ID at
+will.
 
 ~~~
-Q-->R: llt-message(TIDAB, encrypt(keyAB,
-                   rpc-request(rid(SID, nonce), “create-thread(TID-5a, key-5QR,
-                   'icn-protocol-identifier')”)))
-
-                                             On success:
-Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
-                   OK, TID-5b)))
-
-                                             On failure:
-Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
-                   FAIL, <reason>)))
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), “create-thread",
+                   (TID-5a, Key-5QR, <icn-protocol-identifier>))))
+On success:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (TID-5b)))
+On failure:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (<reason>))))
 ~~~
 {: #thread-create title="Logical Link (Thread) Creation."}
 
-This creates a new thread whose identifier is a function of the tuple (TID-5a, TID-5b).
-The questioner Q will use the thread ID TID5Q = (TID-5a, TID-5b), whereas the responder
-R will use the thread ID TID5R = (TID-5b, TID-5a). All logical link traffic for this
-thread will then use these identifiers to refer to this newly created thread.
+This creates a new thread whose identifier is the tuple (TID-5a,
+TID-5b).  That is, for messages send through this thread, questioner Q
+will use the logical link ID LID5Q = (SID, (TID-5a, TID-5b)), whereas
+the responder R will use LID5R = (SID, (TID-5b, TID-5a)).
 
-Also, note that this is an imperative procedure. Since each thread is owned
-and controlled by the session manager, it is sufficient for the session
-manager to simply derive a new encryption key "key" for the thread
-during creation. In other words, it is not necessary to perform another
-multi-round Diffie Hellman key exchange.
+Note that the messages will be encrypted by the symmetric key Key-5QR
+that was unilaterally chosen by the initiator of this RPC.
+Since each thread is owned and controlled by the session manager, it
+is sufficient for the session manager to simply derive and impose a new
+encryption key Key-5QR for the thread during creation. In other words,
+it is not necessary to perform another multi-round Diffie Hellman key
+exchange.
 
-Also, in this case, the failure reasons could be one of:
+The thread creation needs a remote target, expressed in form of an
+client identifier "icn-protocol-identifier". If the new thread cannot
+be bound to such a client, the RPC may fail. A partial list of failure
+reasons:
 
 * "Protocol not supported"
 * "Invalid key size"
@@ -543,32 +602,42 @@ Currently, each thread will use the same encryption algorithm and parameters
 for their respective traffic. This could be changed by allowing endpoints
 to negotiate these parameters during the thread creation exchange.
 
+
+Destroy Logical Link (thread)
+-----------------------------
+
 Finally, when a thread is finished, it must be destroyed and all state
 must be recycled. This is done with the following exchange.
 
 ~~~
-Q-->R: llt-message(TID5Q, encrypt(key-5QR,
-                   rpc-request(rid(SID, nonce), “destroy-thread(TID-5)”)))
+Q-->R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), “destroy-thread", (TID-5)))
 
-Q<--R: llt-message(TID5R, encrypt(key-5QR, rpc-response(rid(SID, nonce), OK)))
+Q<--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
 ~~~
 {: #thread-destroy title="Logical Link (Thread) Destruction."}
 
-After this exchange, both parties tear down and recycle their local state.
-Moreover, this destroy request is idempotent; attempting to destroy a non-existent
-thread will yield an OK response from the recipient.
+After this exchange, both parties tear down and recycle their local
+state. That is, both threads (TID-5a,TID-5b) and (TID-5b,TID-5a) will
+be destroyed at the same time. This destroy action request is
+idempotent; attempting to destroy a non-existent thread will yield an
+OK response from the recipient.
+
+Note that the two threads representing the logical control link, named
+(SID, TIDBA) and (SID, TIDAB) above, cannot be close. Instead, the
+"destroy-session" RPC must be used.
+
+<!-- //// I stopped editing here (cft) -->
+
 
 Encoding (of RPC and parameters)
 ================================
 
-RPC verbs
----------
+Rivest-s symbolic expressions, see http://people.csail.mit.edu/rivest/Sexp.txt
 
-RPC parameters
---------------
+memory format of sexp, relation to TLV
 
-three msg headers
------------------
 
 Security Considerations
 =======================
@@ -577,6 +646,31 @@ yes
 
 --- back
 
+References
+==========
 
-Examples  {#xmp}
-========
+Network pointers
+
+
+RPC and Configuration Name Space
+================================
+
+Verbs:
+~~~
+  OK
+  FAIL
+  create ...
+~~~
+
+State:
+~~~
+  /proto/icn/....
+  
+  /conf/icnllc-version
+  /conf/preferredMTU
+  /conf/MTU
+~~~
+
+
+Example  {#xmp}
+=======
