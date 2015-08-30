@@ -64,11 +64,12 @@ communications. It also supports the dynamic creation of logical links
 on a per-protocol basis, permitting to use the link for multiple ICN
 protocols such as CCNx and NDN, in parallel.
 
-It is assumed that two endpoints executing the LLC have already
+It is assumed that two endpoints executing the ICN-LLC protocol have already
 discovered each other and configured their lower-layer transport
 mechanism to enable bidirectional communication.  A single session is
 establish over this link for end-to-end control. This session is used
-to control, for example, the link MTU size before encryption is turned
+to control, for example, the session (and in consequence also the
+ICN protocols') MTU size before encryption is turned
 on between the two endpoints. Within this session, encrypted logical
 channels, called threads, are established both for control and for
 production traffic. Each endpoint is authenticated during this stage.
@@ -85,7 +86,7 @@ handler". For example, two endpoints with an established session could
 create two separate threads for CCNx and NDN traffic. Threads are
 unidirectional but are often used in pairs (to have bidirectionality). -->
 
-The hierarchy of control in the LLC is shown below.
+The hierarchy of control in ICN-LLC is shown below.
 
 ~~~
 +------------------------------------------------+
@@ -100,22 +101,21 @@ The hierarchy of control in the LLC is shown below.
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
-All control (e.g., negotiation) messages follow an RPC-style model. That is, a RPC-request
-has an identity for the parent context (e.g., the session), an action (verb) that identifies
-the action to be done, and additional parameters. Each RPC-request is followed by
-an RPC-response which specifies the result of the operation, e.g., an OK flag
-or a FAIL flag with some useful error information.
-
-<!-- All protocol-specific traffic
-which is sent over a LLC-configured thread is placed in a datagram frame.
--->
+All control (e.g., negotiation) messages follow an Remote Procedure
+Call-style (RPC) model. That is, an RPC-request has an identity for
+the parent context (session) and a unique call identifier, an action
+(verb) that identifies the action to be done as well as additional
+action-specific parameters. Each RPC-request is followed by an
+RPC-response which specifies the result of the operation, e.g., an OK
+flag or a FAIL flag with some useful error information.
 
 Scope of document:
 
-The rest of this document outlines the exact definition and notation used in the description
-of the LLC, the relevant concepts necessary to understand the protocol, a high-level
-description of the protocol (along with message content), and the encoding details
-of each message.
+The rest of this document introduces definitions and notation used in
+the description of the ICN-LLC protocol, outlines the relevant
+concepts and then provides a high-level description of the protocol
+(along with message content) as well as the encoding details of each
+message. A full encoding example completes this document.
 
   <!-- - concepts
   - high level protocol for specific negotiation tasks: (initSession, startSecureAssociation,
@@ -128,105 +128,123 @@ Definitions and Notation
 
 The following terms are used:
 
-endpoint: A (session) endpoint which is capable of supporting at least
-one ICN protocol, for example an IP node reachable via UDP.
+* endpoint: A (session) endpoint which is capable of supporting at
+  least one ICN protocol, for example an IP node reachable via UDP.
 
-link: A bidirectional datagram service between two endpoints (e.g., UDP, Ethernet).
+* link: A bidirectional datagram service between two endpoints (e.g.,
+  UDP, Ethernet).
+
+* session: A semi-permanent context in which (possibly encrypted)
+  information is exchanged over a link between two endpoints.
+
+* session manager: A control unit responsible for managing a session
+  between two endpoints.
+
+* thread, or logical link: An isolated and ephemeral context managed
+  by a session manager in which encrypted traffic is sent between two
+  endpoints.
+
+* RPC-request: A request to perform an RPC action from a sender to a receiver.
+
+* RPC-response: A response to an RPC-request sent from RPC-request
+  receiver to the RPC-request sender.
 
 <!--
 sender: An endpoint which is sending a message from to another session over a link.
 
 sender: An endpoint which is receiving a message from another session over a link.
--->
 
-session: A semi-permanent context in which (possibly encrypted) information is exchanged
-over a link between two endpoints.
-
-session manager: A control unit responsible for managing a session between two endpoints.
-
-thread, or logical link: An isolated and ephemeral context managed by a session manager in which encrypted
-traffic is sent between two endpoints.
-
-RPC-request: A request to perform an RPC action from a sender to a receiver.
-
-RPC-response: A response to an RPC-request sent from RPC-request receiver to the
-RPC-request sender.
-
-<!-- datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
+datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
 interest or content object).
 -->
 
 
-LLC Concepts
-============
+ICN-LLC Concepts
+================
 
 Assumptions
 -----------
-The LLC protocol makes the following assumptions:
+The ICN-LLC protocol makes the following assumptions:
 
-* The communication parameters necessary to communicate over a link are
-established before the protocol is executed. This includes settings that,
-for example, enable bidirectional firewall traversal.
+(1) The communication parameters necessary to communicate over a link are
+established before the protocol is executed. This includes settings
+that, for example, enable bidirectional firewall traversal.
 
-* The underlying link protocol provides the most basic ability to encapsulate
-and move an arbitrary sized payload from one endpoint to another.
+(2) The underlying link protocol provides the most basic ability to
+frame/encapsulate and move an arbitrary (up to some maximum) sized
+payload from one endpoint to another.
 
-* Each endpoint has an identity and can prove its identity to the other endpoints
-associated with links.
+(3) Each endpoint has a cryptographic identity and can prove its
+identity to the other endpoints over the respective links.
 
-* Endpoints are configured with the identities that they trust, i.e., those endpoints
-that are allowed to participate in the execution of the LLC protocol. These identities
-could be ascertained online or configured manually by system administrators.
+(4) To this end, endpoints are pre-configured with one or more trust
+anchors permitting them to identity other endpoints that they trust
+i.e., those endpoints that are allowed to participate in the execution
+of the ICN-LLC protocol. These identities could be ascertained online
+(making us of the trust anchors) or be pre-configured manually by
+system administrators.
 
-cast
+Cast
 ----
-[cft], incl picture
-
-<!-- Cast (who plays a role), notation
-
-  - assumption about the transport channel (=link), "magic that happened before"
-  - "pipeline picture" - link, session, session manager, threads
-  - rpc pattern, negotiation style
-  - "outer entities", its API towards the session manager -->
 
 ~~~
-the fig
+    ^    +------+ +-----+                       +-----+ +------+
+ clients | CCNx | | NDN |                       | NDN | | CCNx |
+    v    +------+ +-----+                       +-----+ +------+
+             ^       |                             ^        ^
+             |       |                             |        |
+             v       v                             |        v
+         +------API-----+ +- Session ---------+ +-----API------+
+         | ICN-LLC      | | <-- LLC (RPC) --> | | ICN-LLC      |
+         |              | | <----- CCNx ----> | |              |
+         | session      | | ------ NDN -----> | | session      |
+         | manager      | |   ...             | | manager      |
+         +--------------+ +-------------------+ +--------------+
+
+         <-- endpoint --> <------- link ------> <-- endpoint -->
 ~~~
-{: #llc-cast title="Entities (all claiming to be end points 8-)."}
+{: #llc-cast title="Entities in ICN-LLC after secure association: all
+logical links of the session are encrypted and authenticated."}
 
 
-negotiation style
------------------
-[cft]
 
-Endpoints Entities (and an API for ICN-LLC)
--------------------------------------------
+API for Endpoint Clients
+------------------------
 
-The goal of the LLC and its session manager is to expose an API that
-enables a run-time environment to connect local ICN software like a CCNx forwarder to a
-remote peer, reusing the LLC's secured link. For example, the API could be structured
-as follows:
+The goal of the ICN-LLC protocol and its session manager is to expose
+an API that enables a run-time environment to connect local ICN
+software (clients, like for example a CCNx forwarder) to a remote peer
+by reusing the ICN-LLC's secured link.
 
-int udp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
-to the endpoint at the specified IP address and port using UDP as the transport mechanism.
-int tcp_connect(ip_address string, port int, protocolIdentifier string): create a new connection
-to the endpoint at the specified IP address and port using TCP as the transport mechanism.
-int ip_connect(ip_address string, protocolIdentifier string): create a new connection
-to the endpoint at the specified IP address.
-int mac_connect(mac_address string, protocolIdentifier string): create a new connection to
-the endpoint at the specified MAC address.
+This client API provides access to very basic services to interconnect
+ICN peers. In a UNIX environment, the API could be structured as
+follows (in C syntax):
 
-In all cases, the "protocolIdentifier" parameter is a well-defined name for the
-ICN protocol to use. For example,
+~~~
+     int icnllc_init(linkaddr *local, credentials *me);
+     int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
+     int icnllc_deregister(int registerNr);
+     int icnllc_openSession(int handler, linkaddr *peer, trustanchors *t);
+     int icnllc_openThread(int sessionHandler, protoID *pid);
+     int icnllc_write(int threadHandler, char *msg, int len);
+     int icnllc_read(int threadHandler, char *buf, int nbyte);
+     int icnllc_closeThread(int threadHandler);
+     int icnllc_closeSession(int sessionHandler)
+     int icnllc_fini(int icnllcHandler);
+~~~
 
-protocolIdentifier = {'ccnx10, ndn'}
+Wherever possible, ICN-LLC makes use of names rather than numbers to
+identify parameters and entities. For example, protocol identifiers
+are drawn from a string-based name space (the string IS the
+identifier):
 
-The return value for these functions is a unique identifier that the LLC session manager
-uses to identify links and sessions. It is used when an entity wishes to teardown a
-given link using the function specified below.
+~~~
+   typedef char* protoID;
+   #define PROTOID_CCNX07  "/proto/icn/ccnx.2009"
+   #define PROTOID_CCNX10  "/proto/icn/ccnx.2015"
+   #define PROTOID_NDN     "/proto/icn/ndn.2013"
+~~~
 
-void connection_teardown(connectionId int): teardown and destroy all state associated with the
-specified connection ID.
 
 Link-level RPC and Logical Link Traffic
 =======================================
@@ -234,23 +252,37 @@ Link-level RPC and Logical Link Traffic
 All configuration state of a session, including state related to the
 session's threads, are managed by remote procedure operations. To this
 end, two message types "RPC-request" and "RPC-response" are needed. A
-third message type is added to this set for actual production (=
-non-control) traffic, called "logical link traffic".  We describe each
-of these three message types and their mandatory fields in an
-encoding-neutral way. See section X for the actual code points.
+third message type serves to recognize actual production (=
+non-control) traffic, called "logical link traffic".
 
-We first show the list of data structures before explaining each of
-them.
+In the subsequent sections we describe these three message types and
+their fields, as well as the INC-LLC protocol, in an encoding-neutral
+way using prefixed lists. For example, a packet with the fields
 
 ~~~
-    rpc-request (RID, verb, parameter-list)
-    rpc-response(RID, OK|FAIL, result-list|reason-list)
-    llt-message (LID, blob)
+  +----------------------------+
+  | f1 | f2 | more fields here |
+  +----------------------------+
+~~~
 
-    RID = rid(SID, nonce)   # request ID
-    LID = lid(SID, TID)     # logical link ID
-    SID = sid(val1, val2)   # session ID
-    TID = tid(val1, val2)   # thread ID
+will be represented as
+
+~~~
+  f1(f2, more fields here)
+~~~
+
+We first show the data structures corresponding to the three message types
+before explaining each of them.
+
+~~~
+  rpc-request (RID, verb, parameter-list)
+  rpc-response(RID, OK|FAIL, result-list|reason-list)
+  llt-message (LID, blob)
+
+  RID = rid(SID, nonce)   # request ID
+  LID = lid(SID, TID)     # logical link ID
+  SID = sid(val1, val2)   # session ID
+  TID = tid(val1, val2)   # thread ID
 ~~~
 {: #llc-msgs title="The three message types of ICN-LLC."}
 
@@ -299,10 +331,15 @@ Negotiation Tasks
 =================
 
 We now describe the major negotiation tasks (RPC calls) that make up
-the LLC protocol.  Any side can initiate an RPC at any time. It is
+the LLC protocol.
+
+{XXX.cft: say something about the negotiation style: select/set instead of haggle}
+
+Any side can initiate a remote procedure call at any time. It is
 suggested to limit the number of RPCs that one side issues in parallel
-to four (including nesting). For simplicity, we refer to each of the endpoints
-in the protocol as Q for Questioner and R for Responder.
+to four (including nesting). For simplicity, we refer to each of the
+endpoints in the protocol as Q for Questioner and R for Responder.
+
 
 Session Initialization
 ----------------------

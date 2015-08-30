@@ -1,0 +1,672 @@
+
+
+
+
+ICNRG Working Group                                          C. Tschudin
+Internet-Draft                                       University of Basel
+Intended status: Informational                                   C. Wood
+Expires: February 28, 2016                                          PARC
+                                                         August 27, 2015
+
+
+                 Logical Link Control for ICN Protocols
+                      draft-tschudin-icnrg-llc-00
+
+Abstract
+
+   abc
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on February 28, 2016.
+
+Copyright Notice
+
+   Copyright (c) 2015 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 1]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Definitions and Notation  . . . . . . . . . . . . . . . . . .   3
+   3.  ICN-LLC Concepts  . . . . . . . . . . . . . . . . . . . . . .   4
+     3.1.  Assumptions . . . . . . . . . . . . . . . . . . . . . . .   4
+     3.2.  Cast  . . . . . . . . . . . . . . . . . . . . . . . . . .   4
+     3.3.  API for Endpoint Clients  . . . . . . . . . . . . . . . .   5
+   4.  Link-level RPC and Logical Link Traffic . . . . . . . . . . .   6
+     4.1.  RPC-request . . . . . . . . . . . . . . . . . . . . . . .   6
+     4.2.  RPC-response  . . . . . . . . . . . . . . . . . . . . . .   7
+     4.3.  Logical Link Traffic  . . . . . . . . . . . . . . . . . .   7
+   5.  Negotiation Tasks . . . . . . . . . . . . . . . . . . . . . .   7
+     5.1.  Session Initialization  . . . . . . . . . . . . . . . . .   7
+     5.2.  Inspection  . . . . . . . . . . . . . . . . . . . . . . .   8
+     5.3.  Secure Association Establishment  . . . . . . . . . . . .   9
+     5.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  10
+     5.5.  Create and Destroy Logical Links (Threads)  . . . . . . .  11
+   6.  Encoding (of RPC and parameters)  . . . . . . . . . . . . . .  12
+     6.1.  RPC verbs . . . . . . . . . . . . . . . . . . . . . . . .  12
+     6.2.  RPC parameters  . . . . . . . . . . . . . . . . . . . . .  12
+     6.3.  three msg headers . . . . . . . . . . . . . . . . . . . .  12
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  12
+   Appendix A.  Examples . . . . . . . . . . . . . . . . . . . . . .  12
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  12
+
+1.  Introduction
+
+   This document specifies a logical link control (LLC) protocol to
+   establish a secure association between two endpoints running ICN
+   software.  It consists of a negotiation method to explore, configure,
+   and manage the essential parameters for communication, permitting to
+   switch from unsecured message exchange to encrypted and authenticated
+   communications.  It also supports the dynamic creation of logical
+   links on a per-protocol basis, permitting to use the link for
+   multiple ICN protocols such as CCNx and NDN, in parallel.
+
+   It is assumed that two endpoints executing the ICN-LLC protocol have
+   already discovered each other and configured their lower-layer
+   transport mechanism to enable bidirectional communication.  A single
+   session is establish over this link for end-to-end control.  This
+   session is used to control, for example, the session (and in
+   consequence also the ICN protocols') MTU size before encryption is
+   turned on between the two endpoints.  Within this session, encrypted
+   logical channels, called threads, are established both for control
+   and for production traffic.  Each endpoint is authenticated during
+   this stage.
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 2]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   The hierarchy of control in ICN-LLC is shown below.
+
+   +------------------------------------------------+
+   |        1 Link (bidirectional transport)        |
+   |  +------------------------------------------+  |
+   |  |     1 Session                            |  |
+   |  |   +-----------------------------------+  |  |
+   |  |   | N Threads (= undirect. log. link) |  |  |
+   |  |   +-----------------------------------+  |  |
+   |  +------------------------------------------+  |
+   +------------------------------------------------+
+
+                  Figure 1: Control hierarchy in the LLC.
+
+   All control (e.g., negotiation) messages follow an Remote Procedure
+   Call-style (RPC) model.  That is, an RPC-request has an identity for
+   the parent context (session) and a unique call identifier, an action
+   (verb) that identifies the action to be done as well as additional
+   action-specific parameters.  Each RPC-request is followed by an RPC-
+   response which specifies the result of the operation, e.g., an OK
+   flag or a FAIL flag with some useful error information.
+
+   Scope of document:
+
+   The rest of this document introduces definitions and notation used in
+   the description of the ICN-LLC protocol, outlines the relevant
+   concepts and then provides a high-level description of the protocol
+   (along with message content) as well as the encoding details of each
+   message.  A full encoding example completes this document.
+
+2.  Definitions and Notation
+
+   The following terms are used:
+
+   o  endpoint: A (session) endpoint which is capable of supporting at
+      least one ICN protocol, for example an IP node reachable via UDP.
+
+   o  link: A bidirectional datagram service between two endpoints
+      (e.g., UDP, Ethernet).
+
+   o  session: A semi-permanent context in which (possibly encrypted)
+      information is exchanged over a link between two endpoints.
+
+   o  session manager: A control unit responsible for managing a session
+      between two endpoints.
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 3]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   o  thread, or logical link: An isolated and ephemeral context managed
+      by a session manager in which encrypted traffic is sent between
+      two endpoints.
+
+   o  RPC-request: A request to perform an RPC action from a sender to a
+      receiver.
+
+   o  RPC-response: A response to an RPC-request sent from RPC-request
+      receiver to the RPC-request sender.
+
+3.  ICN-LLC Concepts
+
+3.1.  Assumptions
+
+   The ICN-LLC protocol makes the following assumptions:
+
+   (1) The communication parameters necessary to communicate over a link
+   are established before the protocol is executed.  This includes
+   settings that, for example, enable bidirectional firewall traversal.
+
+   (2) The underlying link protocol provides the most basic ability to
+   frame/encapsulate and move an arbitrary (up to some maximum) sized
+   payload from one endpoint to another.
+
+   (3) Each endpoint has a cryptographic identity and can prove its
+   identity to the other endpoints over the respective links.
+
+   (4) To this end, endpoints are pre-configured with one or more trust
+   anchors permitting them to identity other endpoints that they trust
+   i.e., those endpoints that are allowed to participate in the
+   execution of the ICN-LLC protocol.  These identities could be
+   ascertained online (making us of the trust anchors) or be pre-
+   configured manually by system administrators.
+
+3.2.  Cast
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 4]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+       ^    +------+ +-----+                       +-----+ +------+
+    clients | CCNx | | NDN |                       | NDN | | CCNx |
+       v    +------+ +-----+                       +-----+ +------+
+                ^       |                             ^        ^
+                |       |                             |        |
+                v       v                             |        v
+            +------API-----+ +- Session ---------+ +-----API------+
+            | ICN-LLC      | | <-- LLC (RPC) --> | | ICN-LLC      |
+            |              | | <----- CCNx ----> | |              |
+            | session      | | ------ NDN -----> | | session      |
+            | manager      | |   ...             | | manager      |
+            +--------------+ +-------------------+ +--------------+
+
+            <-- endpoint --> <------- link ------> <-- endpoint -->
+
+    Figure 2: Entities in ICN-LLC after secure association: all logical
+           links of the session are encrypted and authenticated.
+
+3.3.  API for Endpoint Clients
+
+   The goal of the ICN-LLC protocol and its session manager is to expose
+   an API that enables a run-time environment to connect local ICN
+   software (clients, like for example a CCNx forwarder) to a remote
+   peer by reusing the ICN-LLC's secured link.
+
+   This client API provides access to very basic services to
+   interconnect ICN peers.  In a UNIX environment, the API could be
+   structured as follows (in C syntax):
+
+     int icnllc_init(linkaddr *local, credentials *me);
+     int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
+     int icnllc_deregister(int registerNr);
+     int icnllc_openSession(int handler, linkaddr *peer, trustanchors *t);
+     int icnllc_openThread(int sessionHandler, protoID *pid);
+     int icnllc_write(int threadHandler, char *msg, int len);
+     int icnllc_read(int threadHandler, char *buf, int nbyte);
+     int icnllc_closeThread(int threadHandler);
+     int icnllc_closeSession(int sessionHandler)
+     int icnllc_fini(int icnllcHandler);
+
+   Wherever possible, ICN-LLC makes use of names rather than numbers to
+   identify parameters and entities.  For example, protocol identifiers
+   are drawn from a string-based name space (the string IS the
+   identifier):
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 5]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+      typedef char* protoID;
+      #define PROTOID_CCNX07  "/proto/icn/ccnx.2009"
+      #define PROTOID_CCNX10  "/proto/icn/ccnx.2015"
+      #define PROTOID_NDN     "/proto/icn/ndn.2013"
+
+4.  Link-level RPC and Logical Link Traffic
+
+   All configuration state of a session, including state related to the
+   session's threads, are managed by remote procedure operations.  To
+   this end, two message types "RPC-request" and "RPC-response" are
+   needed.  A third message type serves to recognize actual production
+   (= non-control) traffic, called "logical link traffic".
+
+   In the subsequent sections we describe these three message types and
+   their fields, as well as the INC-LLC protocol, in an encoding-neutral
+   way using prefixed lists.  For example, a packet with the fields
+
+     +----------------------------+
+     | f1 | f2 | more fields here |
+     +----------------------------+
+
+   will be represented as
+
+     f1(f2, more fields here)
+
+   We first show the data structures corresponding to the three message
+   types before explaining each of them.
+
+     rpc-request (RID, verb, parameter-list)
+     rpc-response(RID, OK|FAIL, result-list|reason-list)
+     llt-message (LID, blob)
+
+     RID = rid(SID, nonce)   # request ID
+     LID = lid(SID, TID)     # logical link ID
+     SID = sid(val1, val2)   # session ID
+     TID = tid(val1, val2)   # thread ID
+
+               Figure 3: The three message types of ICN-LLC.
+
+4.1.  RPC-request
+
+   (See also Figure [#llc-msgs]) An RPC-request message carries an ID
+   that identifyies the request instance (RID) as well as a verb and an
+   optional payload with the list of parameters.
+
+   The RID carries two pieces of information: The current session's ID
+   (SID) comes first, followed by a nonce.  The role of the SID is to
+   refer to previously established state and must be kept constant for
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 6]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   all messages sent inside the established session.  The Nonce is
+   randomly chosen for each new RPC-request and permits to retransmit a
+   request in case the sender thinks that the request or the reply got
+   lost.  It is not a sequence number, though.
+
+4.2.  RPC-response
+
+   An RPC-response is always the reaction to a received RPC-request.  It
+   contains a copy of the request's RID so that the requestor can
+   correlate the answer with the pending request.  Furthermore, the RPC-
+   response has a verb similar to the RPC-request.  However, the
+   permitted verbs are limited to either "OK" or "FAIL".
+
+4.3.  Logical Link Traffic
+
+   Logical Link Traffic refers to the messages that travel inside a
+   logical link (called thread).  This message type has three fields:
+   tag, logical link ID and payload.
+
+   The logical link is identified by a tuple that refers to the session
+   context (SID) as well as the thread to which this message belongs to.
+   In fact, the <SID, TID> tuple is a "network pointer" into the other
+   end's function space [NetPtrs].  The thread ID is also a tuple, in
+   this case of two numbers.  Often, threads are used in pairs in which
+   case the tuple's values are swapped.
+
+5.  Negotiation Tasks
+
+   We now describe the major negotiation tasks (RPC calls) that make up
+   the LLC protocol.
+
+   {XXX.cft: say something about the negotiation style: select/set
+   instead of haggle}
+
+   Any side can initiate a remote procedure call at any time.  It is
+   suggested to limit the number of RPCs that one side issues in
+   parallel to four (including nesting).  For simplicity, we refer to
+   each of the endpoints in the protocol as Q for Questioner and R for
+   Responder.
+
+5.1.  Session Initialization
+
+   The session initialization task is the first step in establishing and
+   using a link between two endpoints.  Assuming such a communication
+   link for the underlying transport protocol is established, it is done
+   by the following RPC exchange.
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 7]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   Q-->R: rpc-request(rid(SID-1,0), nonce), START-SESSION, list())
+
+                                                    On success:
+   Q<--R: rpc-response(rid(SID-1,0), nonce), OK, list(SID-2))
+                                                    On failure:
+   Q<--R: rpc-response(rid(SID-1,0), nonce), FAIL, list(<reason>))
+
+            Figure 4: Session Initialization Message Exchange.
+
+   After that exchange was executed, both ends will use the session ID
+   consisting of SID-1 and SID-2 i.e., sid(SID-1,SID-2) in order to
+   refer to this new session.  In the following we abbreviate this tuple
+   to SID.
+
+   Note that session initialization leaves the two endpoints in an
+   unsecure state until they have executed the secure association task
+   (see below).
+
+   {Question: how to handle/mitigate an attacker injecting such "reset"
+   messages?} {CAW: each side could store a hash preimage that is
+   revealed during the SA step, but this induces state.  If these two
+   operations are separated, then some state is necessary.}
+
+5.2.  Inspection
+
+   Inspection messages may be used to recover generic information from
+   an endpoint, e.g., the preferred MTU size.  The RPC exchange for an
+   inspection message is as follows.
+
+Q-->R: rpc-request(rid(SID, nonce), "lookup", list("/conf/PreferredMTU"))
+
+                                                   On success:
+Q<--R: rpc-response(rid(SID, nonce), OK, list(<MTU value>))
+                                                   On failure:
+Q<--R: rpc-response(rid(SID, nonce), FAIL, list(<reason>))
+
+                  Figure 5: Remote inspection (for MTU).
+
+   Inspection messages may be used to query any well-named object from
+   the recipient endpoint.  In the example above, the inspection for the
+   preferred MTU would usually occur before establishing a secure
+   session association (SA).  Thus, before SA, the contents of the RPC
+   request and response are unencrypted.  However, after a SA is
+   established, all inspection messages will be encrypted like other
+   link traffic.
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 8]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+5.3.  Secure Association Establishment
+
+   The secure association (SA) establishment message exchange is used to
+   create a secure session over a given link.  This enables all
+   subsequent traffic, including RPC exchanges, to be authenticated and
+   encrypted.  The goal is for each endpoint to authenticate the entity
+   running on the other endpoint of a given link, and to then establish
+   shared symmetric keys to perform authenticated encryption of all
+   traffic that follows the exchange.  Currently, we specify a simple
+   challenge-response mutual authentication protocol.  This can be
+   replaced with any functionally equivalent protocol.
+
+   Note that the SA involves nested RPCs: The responder to the initial
+   RPC request will do an RPC in reverse direction in order to
+   authenticate the requestor.
+
+   Note also that encrypt(K,M) stands for the ciphertext resulting from
+   applying key K to message M.
+
+   Q-->R: rpc-request(rid(SID, nonceA), "prove-identity",
+                     list(nil, <optionsA>, <keyshareA>,
+                          NULL, <challengeA-1, challengeA-2>))
+
+   Q<--R: rpc-request(rid(SID, nonceB), "prove-identity"
+                     list((nonceA, <optionsB>, <keyshareB>,
+                          NULL, <challengeB-1, challengeB-2>))
+
+   Q-->R: rpc-response(rid(SID, nonceB), OK,
+                     list(signature(key-Q, challengeB-1),
+                     encrypt(keyAB, list(TIDa, challengeB-2, nonceB)))
+
+   Q<--R: rpc-response(rid(SID, nonceA), OK,
+                      list((signature(key-R, challengeA-1),
+                      encrypt(keyAB, list(TIDb, challengeA-2, nonceA)))
+
+     Figure 6: Secure Association with two challenge-response rounds.
+
+   In the first message, the value nil is used to represent an empty
+   nonce.
+
+   optionsA and optionsB are key-value data structure that contain the
+   following information, at a minimum:
+
+   o  Preferred identity information (e.g., the form of signature
+      algorithm to use when processing the challenge and response).
+
+   o  Diffie Hellman group parameters
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016               [Page 9]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   The key key-{Q,R} is private key of {Q,R} or key shared between Q and
+   R.
+
+   Lastly, keyAB is the key material derived from the output of the
+   Diffie Hellman exchange with the shares keyshareA and keyshareB.
+   That is, logically,
+
+   keyAB = DH(keyshareA, keyshareB)
+
+   When a failure occurs in the secure association RPC (not shown in the
+   digram above), the recipient replies with an error code (in clear) as
+   in the Inspection message case and does not establish a new (or
+   replace an old) secured logical link.
+
+   Otherwise the secure association request succeeded and from this
+   point in time on the two endpoints will exchange their control
+   messages in encrypted form inside threads.
+
+   To this end, the protocol above exchanged and authenticated two
+   endpoint-chosen numbers TIDa and TIDb.  The thread starting from the
+   side that chose the TIDa value will use thread ID TIDAB = (TIDa,
+   TIDb) while the other side can use thread TIDBA = (TIDb,TIDa) to
+   reply.
+
+   For example, the remote inspection RPC can now be executed in a
+   secured fashion as follows:
+
+Q-->R: llt-message(TIDAB, encrypt(keyAB, rpc-request(rid(SID, nonce),
+                                  "lookup", list("/conf/PreferredMTU"))))
+
+                                                          On success:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                                  OK, list(<MTU value>))))
+
+                 Figure 7: Thread-Local Encapsulated RPC.
+
+5.4.  Set MTU
+
+   Setting the MTU is a standard message in the LLC protocol that has
+   the following RPC exchange format.
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 10]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+ Q-->R: llt-message(TIDAB, encrypt(keyAB,
+                    rpc-request(rid(SID, nonce), "set(MTU, <value>))"))
+
+                                                             On success:
+ Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                    OK, <value>)))
+                                                             On failure:
+ Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                    FAIL, <reason>)))
+
+                          Figure 8: Set the MTU.
+
+5.5.  Create and Destroy Logical Links (Threads)
+
+   After a session and SA have been established, the protocol-specific
+   links (threads) must be created.  This is done with the following
+   exchange.
+
+Q-->R: llt-message(TIDAB, encrypt(keyAB,
+                   rpc-request(rid(SID, nonce), "create-thread(TID-5a, key-5QR,
+                   'icn-protocol-identifier')")))
+
+                                             On success:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   OK, TID-5b)))
+
+                                             On failure:
+Q<--R: llt-message(TIDBA, encrypt(keyAB, rpc-response(rid(SID, nonce),
+                   FAIL, <reason>)))
+
+                 Figure 9: Logical Link (Thread) Creation.
+
+   This creates a new thread whose identifier is a function of the tuple
+   (TID-5a, TID-5b).  The questioner Q will use the thread ID TID5Q =
+   (TID-5a, TID-5b), whereas the responder R will use the thread ID
+   TID5R = (TID-5b, TID-5a).  All logical link traffic for this thread
+   will then use these identifiers to refer to this newly created
+   thread.
+
+   Also, note that this is an imperative procedure.  Since each thread
+   is owned and controlled by the session manager, it is sufficient for
+   the session manager to simply derive a new encryption key "key" for
+   the thread during creation.  In other words, it is not necessary to
+   perform another multi-round Diffie Hellman key exchange.
+
+   Also, in this case, the failure reasons could be one of:
+
+   o  "Protocol not supported"
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 11]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   o  "Invalid key size"
+
+   Currently, each thread will use the same encryption algorithm and
+   parameters for their respective traffic.  This could be changed by
+   allowing endpoints to negotiate these parameters during the thread
+   creation exchange.
+
+   Finally, when a thread is finished, it must be destroyed and all
+   state must be recycled.  This is done with the following exchange.
+
+Q-->R: llt-message(TID5Q, encrypt(key-5QR,
+                   rpc-request(rid(SID, nonce), "destroy-thread(TID-5)")))
+
+Q<--R: llt-message(TID5R, encrypt(key-5QR, rpc-response(rid(SID, nonce), OK)))
+
+               Figure 10: Logical Link (Thread) Destruction.
+
+   After this exchange, both parties tear down and recycle their local
+   state.  Moreover, this destroy request is idempotent; attempting to
+   destroy a non-existent thread will yield an OK response from the
+   recipient.
+
+6.  Encoding (of RPC and parameters)
+
+6.1.  RPC verbs
+
+6.2.  RPC parameters
+
+6.3.  three msg headers
+
+7.  Security Considerations
+
+   yes
+
+Appendix A.  Examples
+
+Authors' Addresses
+
+   Christian Tschudin
+   University of Basel
+
+   Email: christian.tschudin@unibas.ch
+
+
+   Christopher A. Wood
+   PARC
+
+   Email: cwood@parc.com
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 12]
