@@ -1,0 +1,983 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head profile="http://www.w3.org/2006/03/hcard http://dublincore.org/documents/2008/08/04/dc-html/">
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
+
+  <title>Logical Link Control for ICN Protocols</title>
+
+  <style type="text/css" title="Xml2Rfc (sans serif)">
+  /*<![CDATA[*/
+	  a {
+	  text-decoration: none;
+	  }
+      /* info code from SantaKlauss at http://www.madaboutstyle.com/tooltip2.html */
+      a.info {
+          /* This is the key. */
+          position: relative;
+          z-index: 24;
+          text-decoration: none;
+      }
+      a.info:hover {
+          z-index: 25;
+          color: #FFF; background-color: #900;
+      }
+      a.info span { display: none; }
+      a.info:hover span.info {
+          /* The span will display just on :hover state. */
+          display: block;
+          position: absolute;
+          font-size: smaller;
+          top: 2em; left: -5em; width: 15em;
+          padding: 2px; border: 1px solid #333;
+          color: #900; background-color: #EEE;
+          text-align: left;
+      }
+	  a.smpl {
+	  color: black;
+	  }
+	  a:hover {
+	  text-decoration: underline;
+	  }
+	  a:active {
+	  text-decoration: underline;
+	  }
+	  address {
+	  margin-top: 1em;
+	  margin-left: 2em;
+	  font-style: normal;
+	  }
+	  body {
+	  color: black;
+	  font-family: verdana, helvetica, arial, sans-serif;
+	  font-size: 10pt;
+	  max-width: 55em;
+	  
+	  }
+	  cite {
+	  font-style: normal;
+	  }
+	  dd {
+	  margin-right: 2em;
+	  }
+	  dl {
+	  margin-left: 2em;
+	  }
+	
+	  ul.empty {
+	  list-style-type: none;
+	  }
+	  ul.empty li {
+	  margin-top: .5em;
+	  }
+	  dl p {
+	  margin-left: 0em;
+	  }
+	  dt {
+	  margin-top: .5em;
+	  }
+	  h1 {
+	  font-size: 14pt;
+	  line-height: 21pt;
+	  page-break-after: avoid;
+	  }
+	  h1.np {
+	  page-break-before: always;
+	  }
+	  h1 a {
+	  color: #333333;
+	  }
+	  h2 {
+	  font-size: 12pt;
+	  line-height: 15pt;
+	  page-break-after: avoid;
+	  }
+	  h3, h4, h5, h6 {
+	  font-size: 10pt;
+	  page-break-after: avoid;
+	  }
+	  h2 a, h3 a, h4 a, h5 a, h6 a {
+	  color: black;
+	  }
+	  img {
+	  margin-left: 3em;
+	  }
+	  li {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  ol {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  ol p {
+	  margin-left: 0em;
+	  }
+	  p {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  pre {
+	  margin-left: 3em;
+	  background-color: lightyellow;
+	  padding: .25em;
+	  }
+	  pre.text2 {
+	  border-style: dotted;
+	  border-width: 1px;
+	  background-color: #f0f0f0;
+	  width: 69em;
+	  }
+	  pre.inline {
+	  background-color: white;
+	  padding: 0em;
+	  }
+	  pre.text {
+	  border-style: dotted;
+	  border-width: 1px;
+	  background-color: #f8f8f8;
+	  width: 69em;
+	  }
+	  pre.drawing {
+	  border-style: solid;
+	  border-width: 1px;
+	  background-color: #f8f8f8;
+	  padding: 2em;
+	  }
+	  table {
+	  margin-left: 2em;
+	  }
+	  table.tt {
+	  vertical-align: top;
+	  }
+	  table.full {
+	  border-style: outset;
+	  border-width: 1px;
+	  }
+	  table.headers {
+	  border-style: outset;
+	  border-width: 1px;
+	  }
+	  table.tt td {
+	  vertical-align: top;
+	  }
+	  table.full td {
+	  border-style: inset;
+	  border-width: 1px;
+	  }
+	  table.tt th {
+	  vertical-align: top;
+	  }
+	  table.full th {
+	  border-style: inset;
+	  border-width: 1px;
+	  }
+	  table.headers th {
+	  border-style: none none inset none;
+	  border-width: 1px;
+	  }
+	  table.left {
+	  margin-right: auto;
+	  }
+	  table.right {
+	  margin-left: auto;
+	  }
+	  table.center {
+	  margin-left: auto;
+	  margin-right: auto;
+	  }
+	  caption {
+	  caption-side: bottom;
+	  font-weight: bold;
+	  font-size: 9pt;
+	  margin-top: .5em;
+	  }
+	
+	  table.header {
+	  border-spacing: 1px;
+	  width: 95%;
+	  font-size: 10pt;
+	  color: white;
+	  }
+	  td.top {
+	  vertical-align: top;
+	  }
+	  td.topnowrap {
+	  vertical-align: top;
+	  white-space: nowrap; 
+	  }
+	  table.header td {
+	  background-color: gray;
+	  width: 50%;
+	  }
+	  table.header a {
+	  color: white;
+	  }
+	  td.reference {
+	  vertical-align: top;
+	  white-space: nowrap;
+	  padding-right: 1em;
+	  }
+	  thead {
+	  display:table-header-group;
+	  }
+	  ul.toc, ul.toc ul {
+	  list-style: none;
+	  margin-left: 1.5em;
+	  margin-right: 0em;
+	  padding-left: 0em;
+	  }
+	  ul.toc li {
+	  line-height: 150%;
+	  font-weight: bold;
+	  font-size: 10pt;
+	  margin-left: 0em;
+	  margin-right: 0em;
+	  }
+	  ul.toc li li {
+	  line-height: normal;
+	  font-weight: normal;
+	  font-size: 9pt;
+	  margin-left: 0em;
+	  margin-right: 0em;
+	  }
+	  li.excluded {
+	  font-size: 0pt;
+	  }
+	  ul p {
+	  margin-left: 0em;
+	  }
+	
+	  .comment {
+	  background-color: yellow;
+	  }
+	  .center {
+	  text-align: center;
+	  }
+	  .error {
+	  color: red;
+	  font-style: italic;
+	  font-weight: bold;
+	  }
+	  .figure {
+	  font-weight: bold;
+	  text-align: center;
+	  font-size: 9pt;
+	  }
+	  .filename {
+	  color: #333333;
+	  font-weight: bold;
+	  font-size: 12pt;
+	  line-height: 21pt;
+	  text-align: center;
+	  }
+	  .fn {
+	  font-weight: bold;
+	  }
+	  .hidden {
+	  display: none;
+	  }
+	  .left {
+	  text-align: left;
+	  }
+	  .right {
+	  text-align: right;
+	  }
+	  .title {
+	  color: #990000;
+	  font-size: 18pt;
+	  line-height: 18pt;
+	  font-weight: bold;
+	  text-align: center;
+	  margin-top: 36pt;
+	  }
+	  .vcardline {
+	  display: block;
+	  }
+	  .warning {
+	  font-size: 14pt;
+	  background-color: yellow;
+	  }
+	
+	
+	  @media print {
+	  .noprint {
+		display: none;
+	  }
+	
+	  a {
+		color: black;
+		text-decoration: none;
+	  }
+	
+	  table.header {
+		width: 90%;
+	  }
+	
+	  td.header {
+		width: 50%;
+		color: black;
+		background-color: white;
+		vertical-align: top;
+		font-size: 12pt;
+	  }
+	
+	  ul.toc a::after {
+		content: leader('.') target-counter(attr(href), page);
+	  }
+	
+	  ul.ind li li a {
+		content: target-counter(attr(href), page);
+	  }
+	
+	  .print2col {
+		column-count: 2;
+		-moz-column-count: 2;
+		column-fill: auto;
+	  }
+	  }
+	
+	  @page {
+	  @top-left {
+		   content: "Internet-Draft"; 
+	  } 
+	  @top-right {
+		   content: "December 2010"; 
+	  } 
+	  @top-center {
+		   content: "Abbreviated Title";
+	  } 
+	  @bottom-left {
+		   content: "Doe"; 
+	  } 
+	  @bottom-center {
+		   content: "Expires June 2011"; 
+	  } 
+	  @bottom-right {
+		   content: "[Page " counter(page) "]"; 
+	  } 
+	  }
+	
+	  @page:first { 
+		@top-left {
+		  content: normal;
+		}
+		@top-right {
+		  content: normal;
+		}
+		@top-center {
+		  content: normal;
+		}
+	  }
+  /*]]>*/
+  </style>
+
+  <link href="#rfc.toc" rel="Contents"/>
+<link href="#rfc.section.1" rel="Chapter" title="1 Introduction"/>
+<link href="#rfc.section.2" rel="Chapter" title="2 Definitions and Notation"/>
+<link href="#rfc.section.3" rel="Chapter" title="3 ICN-LLC Concepts"/>
+<link href="#rfc.section.3.1" rel="Chapter" title="3.1 Assumptions"/>
+<link href="#rfc.section.3.2" rel="Chapter" title="3.2 Cast"/>
+<link href="#rfc.section.3.3" rel="Chapter" title="3.3 API for Endpoint Clients"/>
+<link href="#rfc.section.3.4" rel="Chapter" title="3.4 Client work flow"/>
+<link href="#rfc.section.4" rel="Chapter" title="4 Link-level RPC and Logical Link Traffic"/>
+<link href="#rfc.section.4.1" rel="Chapter" title="4.1 RPC-request"/>
+<link href="#rfc.section.4.2" rel="Chapter" title="4.2 RPC-response"/>
+<link href="#rfc.section.4.3" rel="Chapter" title="4.3 Logical Link Traffic"/>
+<link href="#rfc.section.5" rel="Chapter" title="5 Negotiation Tasks"/>
+<link href="#rfc.section.5.1" rel="Chapter" title="5.1 Session Initialization"/>
+<link href="#rfc.section.5.2" rel="Chapter" title="5.2 Inspection (Get MTU)"/>
+<link href="#rfc.section.5.3" rel="Chapter" title="5.3 Secure Association Establishment"/>
+<link href="#rfc.section.5.4" rel="Chapter" title="5.4 Set MTU"/>
+<link href="#rfc.section.5.5" rel="Chapter" title="5.5 Create Logical Link (= pipe)"/>
+<link href="#rfc.section.5.6" rel="Chapter" title="5.6 Destroy Logical Link (= pipe)"/>
+<link href="#rfc.section.5.7" rel="Chapter" title="5.7 Keep-Alive"/>
+<link href="#rfc.section.6" rel="Chapter" title="6 Encoding of Non-control Traffic and RPC Parameters"/>
+<link href="#rfc.section.6.1" rel="Chapter" title="6.1 Encoding of message type"/>
+<link href="#rfc.section.6.2" rel="Chapter" title="6.2 Encoding of a message&#x2019;s fields (list encoding)"/>
+<link href="#rfc.section.6.3" rel="Chapter" title="6.3 Length of Identifier Fields"/>
+<link href="#rfc.section.6.4" rel="Chapter" title="6.4 Encoding Examples"/>
+<link href="#rfc.section.6.5" rel="Chapter" title="6.5 Minimum MTU, Fragmentation of LLC Messages and Message Stuffing"/>
+<link href="#rfc.section.7" rel="Chapter" title="7 Security Considerations"/>
+<link href="#rfc.section.8" rel="Chapter" title="8 References"/>
+<link href="#rfc.section.9" rel="Chapter" title="9 RPC Verbs and Configuration Name Space"/>
+<link href="#rfc.authors" rel="Chapter"/>
+
+
+  <meta name="generator" content="xml2rfc version 2.5.0 - http://tools.ietf.org/tools/xml2rfc" />
+  <link rel="schema.dct" href="http://purl.org/dc/terms/" />
+
+  <meta name="dct.creator" content="Tschudin, C. and C. Wood" />
+  <meta name="dct.identifier" content="urn:ietf:id:draft-tschudin-icnrg-llc-00" />
+  <meta name="dct.issued" scheme="ISO8601" content="2015-8-30" />
+  <meta name="dct.abstract" content="This document describes an ICN logical link control (ICN-LLC) protocol to enable negotiation between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can negotiate session and pipe properties. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link management requirements." />
+  <meta name="description" content="This document describes an ICN logical link control (ICN-LLC) protocol to enable negotiation between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can negotiate session and pipe properties. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link management requirements." />
+
+</head>
+
+<body>
+
+  <table class="header">
+    <tbody>
+    
+    	<tr>
+  <td class="left">ICNRG Working Group</td>
+  <td class="right">C. Tschudin</td>
+</tr>
+<tr>
+  <td class="left">Internet-Draft</td>
+  <td class="right">University of Basel</td>
+</tr>
+<tr>
+  <td class="left">Intended status: Informational</td>
+  <td class="right">C. Wood</td>
+</tr>
+<tr>
+  <td class="left">Expires: March 2, 2016</td>
+  <td class="right">PARC</td>
+</tr>
+<tr>
+  <td class="left"></td>
+  <td class="right">August 30, 2015</td>
+</tr>
+
+    	
+    </tbody>
+  </table>
+
+  <p class="title">Logical Link Control for ICN Protocols<br />
+  <span class="filename">draft-tschudin-icnrg-llc-00</span></p>
+  
+  <h1 id="rfc.abstract">
+  <a href="#rfc.abstract">Abstract</a>
+</h1>
+<p>This document describes an ICN logical link control (ICN-LLC) protocol to enable negotiation between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can negotiate session and pipe properties. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link management requirements.</p>
+<h1 id="rfc.status">
+  <a href="#rfc.status">Status of This Memo</a>
+</h1>
+<p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
+<p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
+<p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
+<p>This Internet-Draft will expire on March 2, 2016.</p>
+<h1 id="rfc.copyrightnotice">
+  <a href="#rfc.copyrightnotice">Copyright Notice</a>
+</h1>
+<p>Copyright (c) 2015 IETF Trust and the persons identified as the document authors.  All rights reserved.</p>
+<p>This document is subject to BCP 78 and the IETF Trust's Legal Provisions Relating to IETF Documents (http://trustee.ietf.org/license-info) in effect on the date of publication of this document.  Please review these documents carefully, as they describe your rights and restrictions with respect to this document.  Code Components extracted from this document must include Simplified BSD License text as described in Section 4.e of the Trust Legal Provisions and are provided without warranty as described in the Simplified BSD License.</p>
+
+  
+  <hr class="noprint" />
+  <h1 class="np" id="rfc.toc"><a href="#rfc.toc">Table of Contents</a></h1>
+  <ul class="toc">
+
+  	<li>1.   <a href="#rfc.section.1">Introduction</a></li>
+<li>2.   <a href="#rfc.section.2">Definitions and Notation</a></li>
+<li>3.   <a href="#rfc.section.3">ICN-LLC Concepts</a></li>
+<ul><li>3.1.   <a href="#rfc.section.3.1">Assumptions</a></li>
+<li>3.2.   <a href="#rfc.section.3.2">Cast</a></li>
+<li>3.3.   <a href="#rfc.section.3.3">API for Endpoint Clients</a></li>
+<li>3.4.   <a href="#rfc.section.3.4">Client work flow</a></li>
+</ul><li>4.   <a href="#rfc.section.4">Link-level RPC and Logical Link Traffic</a></li>
+<ul><li>4.1.   <a href="#rfc.section.4.1">RPC-request</a></li>
+<li>4.2.   <a href="#rfc.section.4.2">RPC-response</a></li>
+<li>4.3.   <a href="#rfc.section.4.3">Logical Link Traffic</a></li>
+</ul><li>5.   <a href="#rfc.section.5">Negotiation Tasks</a></li>
+<ul><li>5.1.   <a href="#rfc.section.5.1">Session Initialization</a></li>
+<li>5.2.   <a href="#rfc.section.5.2">Inspection (Get MTU)</a></li>
+<li>5.3.   <a href="#rfc.section.5.3">Secure Association Establishment</a></li>
+<li>5.4.   <a href="#rfc.section.5.4">Set MTU</a></li>
+<li>5.5.   <a href="#rfc.section.5.5">Create Logical Link (= pipe)</a></li>
+<li>5.6.   <a href="#rfc.section.5.6">Destroy Logical Link (= pipe)</a></li>
+<li>5.7.   <a href="#rfc.section.5.7">Keep-Alive</a></li>
+</ul><li>6.   <a href="#rfc.section.6">Encoding of Non-control Traffic and RPC Parameters</a></li>
+<ul><li>6.1.   <a href="#rfc.section.6.1">Encoding of message type</a></li>
+<li>6.2.   <a href="#rfc.section.6.2">Encoding of a message&#8217;s fields (list encoding)</a></li>
+<li>6.3.   <a href="#rfc.section.6.3">Length of Identifier Fields</a></li>
+<li>6.4.   <a href="#rfc.section.6.4">Encoding Examples</a></li>
+<li>6.5.   <a href="#rfc.section.6.5">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></li>
+</ul><li>7.   <a href="#rfc.section.7">Security Considerations</a></li>
+<li>8.   <a href="#rfc.section.8">References</a></li>
+<li>9.   <a href="#rfc.section.9">RPC Verbs and Configuration Name Space</a></li>
+<li><a href="#rfc.authors">Authors' Addresses</a></li>
+
+
+  </ul>
+
+  <h1 id="rfc.section.1"><a href="#rfc.section.1">1.</a> <a href="#problems" id="problems">Introduction</a></h1>
+<p id="rfc.section.1.p.1">This document specifies a logical link control (LLC) protocol to establish a secure association between two endpoints running ICN software.  It consists of a negotiation method to explore, configure, and manage the essential parameters for communication, permitting to switch from unsecured message exchange to encrypted and authenticated communications. It also supports the dynamic creation of logical links on a per-protocol basis, permitting to use the link for multiple ICN protocols such as CCNx and NDN, in parallel.</p>
+<p id="rfc.section.1.p.2">It is assumed that two endpoints executing the ICN-LLC protocol have already discovered each other and configured their lower-layer transport mechanism to enable bidirectional communication. A single session is establish over this link for end-to-end control. This session is used to control, for example, the session (and in consequence also the ICN protocols&#8217;) MTU size before encryption is turned on between the two endpoints. Within this session, encrypted logical channels, called pipes, are established both for control and for production traffic. Each endpoint is authenticated during this stage.</p>
+<p id="rfc.section.1.p.3">The hierarchy of control in ICN-LLC is shown below. Note that multiple pipes are used to encapsulate multiple instances of (possibly different) ICN protocols between two endpoints, so as to enable isolation and support future versioning.</p>
+<div id="rfc.figure.1"/>
+<div id="llc-hierarchy"/>
+<pre>
+  +-----------------------------------------------+
+  |        1 Link (bidirectional transport)       |
+  |  +-----------------------------------------+  |
+  |  |     1 Session                           |  |
+  |  |   +----------------------------------+  |  |
+  |  |   | N Pipes (= undirect. log. links) |  |  |
+  |  |   +----------------------------------+  |  |
+  |  +-----------------------------------------+  |
+  +-----------------------------------------------+
+</pre>
+<p class="figure">Figure 1: Control hierarchy in the LLC.</p>
+<p id="rfc.section.1.p.4">All control (e.g., negotiation) messages follow an Remote Procedure Call-style (RPC) model. That is, an RPC-request has an identity for the parent context (session) and a unique call identifier, an action (verb) that identifies the action to be done as well as additional action-specific parameters. Each RPC-request is followed by an RPC-response which specifies the result of the operation, e.g., an OK flag or a FAIL flag with some useful error information.</p>
+<p id="rfc.section.1.p.5">The goal of the ICN-LLC service is to provide a framework that enables two parties to negotiate session and pipe properties. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The design of ICN-LLC&#8217;s RPC approach is extensible enough in order to support a variety of endpoint- and application-specific link management requirements.</p>
+<p id="rfc.section.1.p.6">Scope of document:</p>
+<p id="rfc.section.1.p.7">The rest of this document introduces definitions and notation used in the description of the ICN-LLC protocol, outlines the relevant concepts and then provides a high-level description of the protocol (along with message content) as well as the encoding details of each message. A full encoding example completes this document.</p>
+<p/>
+<h1 id="rfc.section.2"><a href="#rfc.section.2">2.</a> <a href="#definitions-and-notation" id="definitions-and-notation">Definitions and Notation</a></h1>
+<p id="rfc.section.2.p.1">The following terms are used:</p>
+<p/>
+
+<ul>
+  <li>endpoint: A (session) endpoint which is capable of supporting at least one ICN protocol, for example an IP node reachable via UDP.</li>
+  <li>link: A bidirectional datagram service between two endpoints (e.g., UDP, Ethernet).</li>
+  <li>session: A semi-permanent context in which (possibly encrypted) information is exchanged over a link between two endpoints.</li>
+  <li>session manager: A control unit responsible for managing a session between two endpoints.</li>
+  <li>pipe, or logical link: An isolated and ephemeral context managed by a session manager in which encrypted traffic is sent between two endpoints.</li>
+  <li>RPC-request: A request to perform an RPC action from a sender to a receiver.</li>
+  <li>RPC-response: A response to an RPC-request sent from RPC-request receiver to the RPC-request sender.</li>
+</ul>
+<h1 id="rfc.section.3"><a href="#rfc.section.3">3.</a> <a href="#icn-llc-concepts" id="icn-llc-concepts">ICN-LLC Concepts</a></h1>
+<h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#assumptions" id="assumptions">Assumptions</a></h1>
+<p id="rfc.section.3.1.p.1">The ICN-LLC protocol makes the following assumptions:</p>
+<p id="rfc.section.3.1.p.2">(1) The communication parameters necessary to communicate over a link are established before the protocol is executed. This includes settings that, for example, enable bidirectional firewall traversal.</p>
+<p id="rfc.section.3.1.p.3">(2) The underlying link protocol provides the most basic ability to frame/encapsulate and move an arbitrary (up to some maximum) sized payload from one endpoint to another. We do not assume ordered or reliable datagram transfer.</p>
+<p id="rfc.section.3.1.p.4">(3) Each endpoint has a cryptographic identity and can prove its identity to the other endpoints over the respective links.</p>
+<p id="rfc.section.3.1.p.5">(4) To this end, endpoints are pre-configured with one or more trust anchors permitting them to identity other endpoints that they trust i.e., those endpoints that are allowed to participate in the execution of the ICN-LLC protocol. These identities could be ascertained online (making us of the trust anchors) or be pre-configured manually by system administrators.</p>
+<h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#cast" id="cast">Cast</a></h1>
+<div id="rfc.figure.2"/>
+<div id="llc-cast"/>
+<pre>
+    ^    +------+ +-----+                       +-----+ +------+
+ clients | CCNx | | NDN |                       | NDN | | CCNx |
+    v    +------+ +-----+                       +-----+ +------+
+             ^       |                             ^        ^
+             |       |                             |        |
+             v       v                             |        v
+         +------API-----+ +- Session ---------+ +-----API------+
+         | ICN-LLC      | | &lt;-- LLC (RPC) --&gt; | | ICN-LLC      |
+         |              | | &lt;----- CCNx ----&gt; | |              |
+         | session      | | ------ NDN -----&gt; | | session      |
+         | manager      | |   ...             | | manager      |
+         +--------------+ +-------------------+ +--------------+
+
+         &lt;-- endpoint --&gt; &lt;------- link ------&gt; &lt;-- endpoint --&gt;
+</pre>
+<p class="figure">Figure 2: Entities in ICN-LLC after secure association: all logical links of the session are encrypted and authenticated.</p>
+<h1 id="rfc.section.3.3"><a href="#rfc.section.3.3">3.3.</a> <a href="#api-for-endpoint-clients" id="api-for-endpoint-clients">API for Endpoint Clients</a></h1>
+<p id="rfc.section.3.3.p.1">The goal of the ICN-LLC protocol and its session manager is to expose an API that enables a run-time environment to connect local ICN software (clients, like for example a CCNx forwarder) to a remote peer by reusing the ICN-LLC&#8217;s secured link.</p>
+<p id="rfc.section.3.3.p.2">This client API provides access to very basic services to interconnect ICN peers. In a UNIX environment, the API could be structured as follows (in C syntax):</p>
+<pre>
+     int icnllc_init(linkaddr *local, credentials *me, fct *notify);
+     int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
+     int icnllc_deregister(int registerNr);
+     int icnllc_openSession(int handler, linkaddr *peer, trustanchors *t);
+     int icnllc_openPipe(int sessionHandler, protoID *pid, fct *notify);
+     int icnllc_write(int pipeHandler, char *msg, int len);
+     int icnllc_read(int pipeHandler, char *buf, int nbyte);
+     int icnllc_closePipe(int pipeHandler);
+     int icnllc_closeSession(int sessionHandler)
+     int icnllc_fini(int icnllcHandler);
+</pre>
+<p id="rfc.section.3.3.p.3">Wherever possible, ICN-LLC makes use of names rather than numbers to identify parameters and entities. For example, protocol identifiers are drawn from a string-based name space (the string IS the identifier):</p>
+<pre>
+   typedef char* protoID;
+   #define PROTOID_CCNX07  "/proto/icn/ccnx.2009"
+   #define PROTOID_CCNX10  "/proto/icn/ccnx.2015"
+   #define PROTOID_NDN     "/proto/icn/ndn.2013"
+</pre>
+<h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#client-work-flow" id="client-work-flow">Client work flow</a></h1>
+<p id="rfc.section.3.4.p.1">ICN clients e.g., forwarders, will use the API as follows.  A CCNx router wanting to establish a secure link to a peer would be programmed as follows:</p>
+<pre>
+   llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
+   s = icnllc_openSession(llc, &amp;remoteUDP, &amp;myTrustAnchor);
+
+   peer = icnllc_openPipe(s, "/proto/icn/ccnx.2015", NULL);
+   // ... encrypted and authenticated write and read:
+   // icnllc_write(peer, data, datalen);
+   // icnllc_read(peer, &amp;buf, sizeof*buf);
+
+   // parallel pipe for client-level remote mgmt actions (also secured):
+   peerMgmt = icnllc_openPipe(s, "/proto/icn/ccnx.2015.mgmt");
+   // ...
+   icnllc_closePipe(peerMgmt);
+
+   icnllc_closePipe(peer);
+   icnllc_closeSession(s)
+   icnllc_fini(llc);
+</pre>
+<p id="rfc.section.3.4.p.2">A NDN router waiting for session establishment from other peers would issue this sequence of actions (without showing error handling):</p>
+<pre>
+   llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
+   ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
+   // ... serve pipe establishment in NDNupcall()
+   icnllc_deregister(ndn);
+   icnllc_fini(llc);
+</pre>
+<h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#link-level-rpc-and-logical-link-traffic" id="link-level-rpc-and-logical-link-traffic">Link-level RPC and Logical Link Traffic</a></h1>
+<p id="rfc.section.4.p.1">All configuration state of a session, including state related to the session&#8217;s pipes, are managed by remote procedure operations. To this end, two message types &#8220;RPC-request&#8221; and &#8220;RPC-response&#8221; are needed. A third message type serves to recognize actual production (= non-control) traffic, called &#8220;logical link traffic&#8221;.</p>
+<p id="rfc.section.4.p.2">In the subsequent sections we describe these three message types and their fields, as well as the INC-LLC protocol, in an encoding-neutral way using prefixed lists. For example, a packet with the fields</p>
+<pre>
+  +----------------------------+
+  | f1 | f2 | more fields here |
+  +----------------------------+
+</pre>
+<p id="rfc.section.4.p.3">will be represented as</p>
+<pre>
+  f1(f2, more fields here)
+</pre>
+<p id="rfc.section.4.p.4">That is, a parethesis pair is used as a notation for a list. The empty list is either shown as () or NIL.</p>
+<p id="rfc.section.4.p.5">We first show the data structures corresponding to the three message types before explaining each of them.</p>
+<div id="rfc.figure.3"/>
+<div id="llc-msgs"/>
+<pre>
+  rpc-request (RID, verb, parameter-list)
+  rpc-response(RID, OK|FAIL, result-list|reason-list)
+  llt-message (LID, blob)
+
+  RID = (SID, nonce)         # request ID
+  LID = (SID, PID)           # logical link ID
+  SID = (intval1, intval2)   # session ID
+  PID = (intval1, intval2)   # pipe ID
+</pre>
+<p class="figure">Figure 3: The three message types of ICN-LLC.</p>
+<h1 id="rfc.section.4.1"><a href="#rfc.section.4.1">4.1.</a> <a href="#rpc-request" id="rpc-request">RPC-request</a></h1>
+<p id="rfc.section.4.1.p.1">(See also Figure [#llc-msgs]) An RPC-request message carries an ID that identifyies the request instance (RID) as well as a verb (= name of the remote procedure) and an optional payload with the list of parameters.</p>
+<p id="rfc.section.4.1.p.2">The RID carries two pieces of information: The current session&#8217;s ID (SID) comes first, followed by a nonce. The role of the SID is to refer to previously established state and must be kept constant for all messages sent inside the established session. The Nonce is randomly chosen for each new RPC-request and permits to retransmit a request in case the sender thinks that the request or the reply got lost. It is not a sequence number, though.</p>
+<h1 id="rfc.section.4.2"><a href="#rfc.section.4.2">4.2.</a> <a href="#rpc-response" id="rpc-response">RPC-response</a></h1>
+<p id="rfc.section.4.2.p.1">An RPC-response is always the reaction to a received RPC-request. It contains a copy of the request&#8217;s RID so that the requestor can correlate the answer with the pending request. Furthermore, the RPC-response has a verb similar to the RPC-request. However, the permitted verbs are limited to either &#8220;OK&#8221; or &#8220;FAIL&#8221;.</p>
+<h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> <a href="#logical-link-traffic" id="logical-link-traffic">Logical Link Traffic</a></h1>
+<p id="rfc.section.4.3.p.1">Logical Link Traffic refers to the messages that travel inside a logical link (called pipe). This message type has two fields: logical link ID and payload.</p>
+<p id="rfc.section.4.3.p.2">The logical link is identified by a tuple that refers to the session context (SID) as well as the pipe to which this message belongs to. In fact, the (SID, PID) tuple is a &#8220;network pointer&#8221; into the other end&#8217;s function space [NetPtrs]. The pipe ID is also a tuple, in this case of two numbers. Often, pipes are used in pairs (for bidirectional interconnection of ICN clients) in which case the tuple&#8217;s values are swapped.</p>
+<h1 id="rfc.section.5"><a href="#rfc.section.5">5.</a> <a href="#negotiation-tasks" id="negotiation-tasks">Negotiation Tasks</a></h1>
+<p id="rfc.section.5.p.1">We now describe the major negotiation tasks (RPC calls) that make up the LLC protocol.</p>
+<p id="rfc.section.5.p.2">{XXX.cft: say something about the negotiation style: select/set instead of haggle}</p>
+<p id="rfc.section.5.p.3">{XXX.cft: say something about the required RPC failure semantics (at-least-once vs at-most-once)}</p>
+<p id="rfc.section.5.p.4">Any side can initiate a remote procedure call at any time. It is suggested to limit the number of RPCs that one side issues in parallel to four (including nesting). For simplicity, we refer to each of the endpoints in the protocol as Q for Questioner and R for Responder.</p>
+<h1 id="rfc.section.5.1"><a href="#rfc.section.5.1">5.1.</a> <a href="#session-initialization" id="session-initialization">Session Initialization</a></h1>
+<p id="rfc.section.5.1.p.1">The session initialization task is the first step in establishing and using a link between two endpoints. Assuming such a communication link for the underlying transport protocol is established, it is done by the following RPC exchange.</p>
+<div id="rfc.figure.4"/>
+<div id="session-init"/>
+<pre>
+Q--&gt;R: rpc-request((SID-1,0), nonce), START-SESSION, ())
+
+On success:
+  Q&lt;--R: rpc-response((SID-1,0), nonce), OK, list(SID-2))
+On failure:
+  Q&lt;--R: rpc-response((SID-1,0), nonce), FAIL, list(&lt;reason&gt;))
+</pre>
+<p class="figure">Figure 4: Session Initialization Message Exchange.</p>
+<p id="rfc.section.5.1.p.2">After that exchange was executed, both ends will use the session ID consisting of SID-1 and SID-2 i.e., (SID-1, SID-2) in order to refer to this new session. In the following we abbreviate this tuple to SID.</p>
+<p id="rfc.section.5.1.p.3">Note that session initialization leaves the two endpoints in an unsecure state until they have executed the secure association task (see below).</p>
+<p id="rfc.section.5.1.p.4">{Question: how to handle/mitigate an attacker injecting such &#8220;reset&#8221; messages?} {CAW: each side could store a hash preimage that is revealed during the SA step, but this induces state. If these two operations are separated, then some state is necessary.}</p>
+<h1 id="rfc.section.5.2"><a href="#rfc.section.5.2">5.2.</a> <a href="#inspection-get-mtu" id="inspection-get-mtu">Inspection (Get MTU)</a></h1>
+<p id="rfc.section.5.2.p.1">Inspection messages may be used to recover generic information from an endpoint, e.g., the preferred MTU size. The RPC exchange for an inspection message is as follows.</p>
+<div id="rfc.figure.5"/>
+<div id="inspection-msg"/>
+<pre>
+Q--&gt;R: rpc-request(SID, nonce), LOOKUP, ("/conf/preferredMTU"))
+
+On success:
+  Q&lt;--R: rpc-response((SID, nonce), OK, (&lt;MTU value&gt;))
+On failure:
+  Q&lt;--R: rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))
+</pre>
+<p class="figure">Figure 5: Remote inspection (for MTU).</p>
+<p id="rfc.section.5.2.p.2">Inspection messages may be used to query any well-named object from the recipient endpoint. In the example above, the inspection for the preferred MTU would usually occur before establishing a secure session association (SA).  Thus, before SA, the contents of the RPC request and response are unencrypted.  However, after a SA is established, all inspection messages will be encrypted like other link traffic.</p>
+<h1 id="rfc.section.5.3"><a href="#rfc.section.5.3">5.3.</a> <a href="#secure-association-establishment" id="secure-association-establishment">Secure Association Establishment</a></h1>
+<p id="rfc.section.5.3.p.1">The secure association (SA) establishment message exchange is used to create a secure session over a given link. This enables all subsequent traffic, including RPC exchanges, to be authenticated and encrypted. The goal is for each endpoint to authenticate the entity running on the other endpoint of a given link, and to then establish shared symmetric keys to perform authenticated encryption of all traffic that follows the exchange.  Currently, we specify a simple challenge-response mutual authentication protocol.  This can be replaced with any functionally equivalent protocol.</p>
+<p id="rfc.section.5.3.p.2">Note that the SA involves nested RPCs: The responder to the initial RPC request will do an RPC in reverse direction in order to authenticate the requestor.</p>
+<p id="rfc.section.5.3.p.3">Note also that Encrypt(K,M) stands for the ciphertext resulting from applying key K to message M and Signature(K,M) for a signature of M using key K.</p>
+<div id="rfc.figure.6"/>
+<div id="sa-init"/>
+<pre>
+Q--&gt;R: rpc-request((SID, nonceA), &#8220;prove-identity",
+                   (NIL, &lt;optionsA&gt;, &lt;keyshareA&gt;,
+                    NIL, &lt;challengeA-1, challengeA-2&gt;))
+
+Q&lt;--R: rpc-request((SID, nonceB), &#8220;prove-identity"
+                   (nonceA, &lt;optionsB&gt;, &lt;keyshareB&gt;,
+                    NIL, &lt;challengeB-1, challengeB-2&gt;))
+
+Q--&gt;R: rpc-response((SID, nonceB), OK,
+                    (Signature(key-Q, challengeB-1),
+                     Encrypt(keyAB, (PIDa, challengeB-2, nonceB)))
+
+Q&lt;--R: rpc-response((SID, nonceA), OK,
+                    (Signature(key-R, challengeA-1),
+                     Encrypt(keyAB, (PIDb, challengeA-2, nonceA)))
+</pre>
+<p class="figure">Figure 6: Secure Association with two challenge-response rounds.</p>
+<p id="rfc.section.5.3.p.4">In the first message, the value NIL is used to represent an empty nonce.</p>
+<p id="rfc.section.5.3.p.5">The fields named optionsA and optionsB are key-value data structures that contain the following information, at a minimum:</p>
+<p/>
+
+<ul>
+  <li>Preferred identity information (e.g., the form of signature algorithm to use when processing the challenge and response).</li>
+  <li>Diffie Hellman group parameters</li>
+</ul>
+<p id="rfc.section.5.3.p.7">The key key-{Q,R} is a private key of {Q,R} or a symmetric key shared between Q and R.</p>
+<p id="rfc.section.5.3.p.8">Lastly, keyAB is the key material derived from the output of the Diffie Hellman exchange with the shares keyshareA and keyshareB. That is, logically,</p>
+<pre>
+keyAB = DH(keyshareA, keyshareB)
+</pre>
+<p id="rfc.section.5.3.p.9">When a failure occurs in the secure association RPC (not shown in the diagram above), the recipient replies with an error code (in clear) as in the Inspection message case and does not establish a new (or replace an old) secured logical link.</p>
+<p id="rfc.section.5.3.p.10">Otherwise the secure association request succeeded and from this point in time on the two endpoints will exchange their control messages in encrypted form inside pipes.</p>
+<p id="rfc.section.5.3.p.11">To this end, the protocol above exchanged and authenticated two endpoint-chosen numbers PIDa and PIDb. The pipe starting from the side that chose the PIDa value, will use pipe ID PIDAB = (PIDa, PIDb) while the other side can use pipe identifier PIDBA = (PIDb,PIDa) to reply.  Subsequently we will refer to the respective logical link identifiers that result from this as LIDAB=(SID,PIDAB) and LIDBA=(SID,PIDBA)</p>
+<p id="rfc.section.5.3.p.12">For example, the remote inspection RPC can now be executed in a secured fashion as follows:</p>
+<div id="rfc.figure.7"/>
+<div id="secure-inspection"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce),
+                               &#8220;lookup", ("/conf/preferredMTU"))))
+On success:
+Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                   rpc-response((SID, nonce),
+                                OK, (&lt;MTU value&gt;))))
+</pre>
+<p class="figure">Figure 7: RPC inside a local pipe.</p>
+<h1 id="rfc.section.5.4"><a href="#rfc.section.5.4">5.4.</a> <a href="#set-mtu" id="set-mtu">Set MTU</a></h1>
+<p id="rfc.section.5.4.p.1">Setting the MTU is a standard message in the LLC protocol that has the following RPC exchange format.</p>
+<div id="rfc.figure.8"/>
+<div id="set-mtu-msg"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "set", ("/conf/MTU", &lt;value&gt;))))
+
+On success:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (&lt;value&gt;))))
+On failure:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))))
+</pre>
+<p class="figure">Figure 8: Set the MTU.</p>
+<h1 id="rfc.section.5.5"><a href="#rfc.section.5.5">5.5.</a> <a href="#create-logical-link-pipe" id="create-logical-link-pipe">Create Logical Link (= pipe)</a></h1>
+<p id="rfc.section.5.5.p.1">After a session and SA have been established, the protocol-specific links (pipe) must be created. This is done with the following exchange. The number 5 shown below is arbitrary and signals for this specific task that Q or R can choose their part of the pipe ID at will.</p>
+<div id="rfc.figure.9"/>
+<div id="pipe-create"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), &#8220;create-pipe",
+                   (PID-5a, Key-5QR, &lt;icn-protocol-identifier&gt;))))
+On success:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (PID-5b)))
+On failure:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))))
+</pre>
+<p class="figure">Figure 9: Logical Link (Pipe) Creation.</p>
+<p id="rfc.section.5.5.p.2">This creates a new pipe whose identifier is the tuple (PID-5a, PID-5b).  That is, for messages send through this pipe, questioner Q will use the logical link ID LID5Q = (SID, (PID-5a, PID-5b)), whereas the responder R will use LID5R = (SID, (PID-5b, PID-5a)).</p>
+<p id="rfc.section.5.5.p.3">Note that the messages will be encrypted by the symmetric key Key-5QR that was unilaterally chosen by the initiator of this RPC.  Since each pipe is owned and controlled by the session manager, it is sufficient for the session manager to simply derive and impose a new encryption key Key-5QR for the pipe during creation. In other words, it is not necessary to perform another multi-round Diffie Hellman key exchange.</p>
+<p id="rfc.section.5.5.p.4">The pipe creation needs a remote target, expressed in form of an client identifier &#8220;icn-protocol-identifier&#8221;. If the new pipe cannot be bound to such a client, the RPC may fail. A partial list of failure reasons:</p>
+<p/>
+
+<ul>
+  <li>&#8220;Protocol not supported&#8221;</li>
+  <li>&#8220;Invalid key size&#8221;</li>
+</ul>
+<p id="rfc.section.5.5.p.6">Currently, each pipe will use the same encryption algorithm and parameters for their respective traffic. This could be changed by allowing endpoints to negotiate these parameters during the pipe creation exchange.</p>
+<h1 id="rfc.section.5.6"><a href="#rfc.section.5.6">5.6.</a> <a href="#destroy-logical-link-pipe" id="destroy-logical-link-pipe">Destroy Logical Link (= pipe)</a></h1>
+<p id="rfc.section.5.6.p.1">Finally, when a pipe is finished, it must be destroyed and all state must be recycled. This is done with the following exchange.</p>
+<div id="rfc.figure.10"/>
+<div id="pipe-destroy"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), &#8220;destroy-pipe", (PID-5)))
+
+Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
+</pre>
+<p class="figure">Figure 10: Logical Link (Pipe) Destruction.</p>
+<p id="rfc.section.5.6.p.2">After this exchange, both parties tear down and recycle their local state. That is, both pipes (PID-5a,PID-5b) and (PID-5b,PID-5a) will be destroyed at the same time. This destroy action request is idempotent; attempting to destroy a non-existent pipe will yield an OK response from the recipient.</p>
+<p id="rfc.section.5.6.p.3">Note that the two pipes representing the logical control link, named (SID, PIDBA) and (SID, PIDAB) above, cannot be close. Instead, the &#8220;destroy-session&#8221; RPC must be used.</p>
+<h1 id="rfc.section.5.7"><a href="#rfc.section.5.7">5.7.</a> <a href="#keep-alive" id="keep-alive">Keep-Alive</a></h1>
+<p id="rfc.section.5.7.p.1">Use the NOOP call to verify that the peer session manager is still up and running.</p>
+<pre>
+Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), NOOP, NIL)))
+
+Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
+</pre>
+<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#encoding-of-non-control-traffic-and-rpc-parameters" id="encoding-of-non-control-traffic-and-rpc-parameters">Encoding of Non-control Traffic and RPC Parameters</a></h1>
+<p id="rfc.section.6.p.1">Structurally, all three message types of ICN-LLC are identical in being a list of fields. A single header byte discriminates among the message types, followed by an encoding of the message&#8217;s field list:</p>
+<pre>
+     Byte 0    Bytes 1 to N-1
+  +---------+--------------//--+
+  | msgtype | listEncoding ....|
+  +---------+--------------//--+
+</pre>
+<h1 id="rfc.section.6.1"><a href="#rfc.section.6.1">6.1.</a> <a href="#encoding-of-message-type" id="encoding-of-message-type">Encoding of message type</a></h1>
+<p id="rfc.section.6.1.p.1">The assigned values for the one-byte-header are:</p>
+<pre>
+  0x81  llt-message
+  0x82  rpc-request
+  0x83  rpc-response
+</pre>
+<h1 id="rfc.section.6.2"><a href="#rfc.section.6.2">6.2.</a> <a href="#encoding-of-a-messages-fields-list-encoding" id="encoding-of-a-messages-fields-list-encoding">Encoding of a message&#8217;s fields (list encoding)</a></h1>
+<p id="rfc.section.6.2.p.1">ICN-LLC encodes lists in a similar way as was proposed by Rivest for symbolic expressions [SEXPR]. The variation consists in combining the &#8220;list bit&#8221; with a variable length field and in omitting the 0x00 byte to signal the end-of-list (because the length field already encodes this information).</p>
+<p id="rfc.section.6.2.p.2">In ICN-LLC, a data structure is represented as a two-tuple of type+length and the content bytes: (TL, value). The length tells the amount of bytes needed to represent the value.</p>
+<p id="rfc.section.6.2.p.3">A data structure either is a list or an atom. The general format for a list is:</p>
+<pre>
+  &lt;list-bit=1, len-in-bytes&gt; &lt;element-1&gt; ... &lt;element-N&gt;
+</pre>
+<p id="rfc.section.6.2.p.4">where an element can be either another list or an atom.</p>
+<p id="rfc.section.6.2.p.5">The format for an atom is:</p>
+<pre>
+  &lt;list-bit=0, len-in-bytes&gt; &lt;blob&gt;
+</pre>
+<p id="rfc.section.6.2.p.6">Two atom types are defined (but the type is not made explicit in the ICN-LLC encoding): Strings are encoded without trailing zero, integer values are signed and are encoded in network order format.</p>
+<p id="rfc.section.6.2.p.7">The type+len information is encoded with a varying number of bytes depending on the value of len. In the following diagram, &#8220;L&#8221; stands for the list-bit and &#8220;l&#8221; for a bit of the length value to be encoded (unsigned, network order).</p>
+<pre>
+  len value      encoding (bits)
+
+  0 .. 63        L0ll llll
+  64 .. 8191     L10l llll  llll llll
+  8192..1048575  L110 llll  llll llll  llll llll
+  reserved       L111 ...
+</pre>
+<h1 id="rfc.section.6.3"><a href="#rfc.section.6.3">6.3.</a> <a href="#length-of-identifier-fields" id="length-of-identifier-fields">Length of Identifier Fields</a></h1>
+<p id="rfc.section.6.3.p.1">Although fields can vary in length and therefore, for example, a pipeID could consist of two 8-bit values, it is recommended to implement identifiers according to the following MINIMAL lengths:</p>
+<pre>
+  4 Bytes    nonce
+  2x2 Bytes  session ID
+  2x2 Bytes  pipe ID
+</pre>
+<h1 id="rfc.section.6.4"><a href="#rfc.section.6.4">6.4.</a> <a href="#encoding-examples" id="encoding-examples">Encoding Examples</a></h1>
+<p id="rfc.section.6.4.p.1">a) LLT message</p>
+<pre>
+  llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --&gt; 21 Bytes
+
+  0x81                     % msg type
+  0x93                     % 0x80 + total length
+    0x8e                   % LID
+      0x86                 % SID
+        0x02 0x12 0x34
+        0x02 0x56 0x78
+      0x86                 % PID
+        0x02 0x11 0x11
+        0x02 0x11 0x11
+    0x03 0x61 0x62 0x63    % payload
+</pre>
+<p id="rfc.section.6.4.p.2">b) RPC-request (start session)</p>
+<pre>
+  rpc-request(((0x1234,0)0x73683559)"_rst"()) --&gt; 19 Bytes
+
+  0x82                     % msg type
+  0x91                     % 0x80 + total length
+    0x8a                   % RID
+      0x84                 % SID
+        0x02 0x12 0x34
+        0x00
+      0x04                 % nonce
+        0x73 0x68 0x35 0x59
+    0x04                   % verb
+      0x5f 0x72 0x73 0x74
+    0x80                   % empty param list
+</pre>
+<p id="rfc.section.6.4.p.3">c) RPC-response (session ack)</p>
+<pre>
+  rpc-response(((0x1234,0x5678)0x73683559)0x00()) --&gt; 17 Bytes
+
+  0x83                     % msg type
+  0x8f                     % 0x80 + total length
+    0x8c                   % RID
+      0x84                 % SID
+        0x02 0x12 0x34
+        0x02 0x56 0x78
+      0x04                 % nonce
+        0x73 0x68 0x35 0x59
+    0x01 0x00              % OK
+    0x80                   % empty param list
+</pre>
+<h1 id="rfc.section.6.5"><a href="#rfc.section.6.5">6.5.</a> <a href="#minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing" id="minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></h1>
+<p id="rfc.section.6.5.p.1">None of the three message types (LLT-message, RPC-request, RPC-response) may be fragmented.</p>
+<p id="rfc.section.6.5.p.2">However, using RPC and being subject to negotiation, peers might use RPC to transfer parts of a larger message for remote assembly and then trigger the delivery of that remote memory block.</p>
+<p id="rfc.section.6.5.p.3">The minimum (link-level) MTU is 1280 bytes (OK?). This permits &#8230;</p>
+<p id="rfc.section.6.5.p.4">Multiple LLC messages can be combined into one frame as long as they fully fit into the link&#8217;s MTU.</p>
+<h1 id="rfc.section.7"><a href="#rfc.section.7">7.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a></h1>
+<p id="rfc.section.7.p.1">yes</p>
+<h1 id="rfc.section.8"><a href="#rfc.section.8">8.</a> <a href="#references" id="references">References</a></h1>
+<p/>
+
+<ul>
+  <li>S-expressions   http://people.csail.mit.edu/rivest/Sexp.txt</li>
+  <li>Network pointers http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps</li>
+</ul>
+<h1 id="rfc.section.9"><a href="#rfc.section.9">9.</a> <a href="#rpc-verbs-and-configuration-name-space" id="rpc-verbs-and-configuration-name-space">RPC Verbs and Configuration Name Space</a></h1>
+<p id="rfc.section.9.p.1">Verbs:</p>
+<pre>
+  OK               byte 0x00
+  FAIL             byte 0x01
+  START-SESSION    "_rst"    , or "HELO" ....
+  END-SESSION      "_fin"
+  LOOKUP           "_get"
+  CONFIGURE        "_set"
+  NOOP             "_nop"
+  PROVE-IDENTITY
+  PIPE-CREATE
+  PIPE-DESTROY
+</pre>
+<p id="rfc.section.9.p.2">Constants and &#8220;state registers&#8221; (MIB):</p>
+<pre>
+  /proto/icn/....
+
+  /conf/rw/icnllc-version
+  /conf/ro/preferredMTU
+  /conf/rw/MTU
+</pre>
+<h1 id="rfc.authors">
+  <a href="#rfc.authors">Authors' Addresses</a>
+</h1>
+<div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Christian Tschudin</span> 
+	  <span class="n hidden">
+		<span class="family-name">Tschudin</span>
+	  </span>
+	</span>
+	<span class="org vcardline">University of Basel</span>
+	<span class="adr">
+	  
+	  <span class="vcardline">
+		<span class="locality"></span> 
+		<span class="region"></span>
+		<span class="code"></span>
+	  </span>
+	  <span class="country-name vcardline"></span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:christian.tschudin@unibas.ch">christian.tschudin@unibas.ch</a></span>
+
+  </address>
+</div><div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Christopher A. Wood</span> 
+	  <span class="n hidden">
+		<span class="family-name">Wood</span>
+	  </span>
+	</span>
+	<span class="org vcardline">PARC</span>
+	<span class="adr">
+	  
+	  <span class="vcardline">
+		<span class="locality"></span> 
+		<span class="region"></span>
+		<span class="code"></span>
+	  </span>
+	  <span class="country-name vcardline"></span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:cwood@parc.com">cwood@parc.com</a></span>
+
+  </address>
+</div>
+
+</body>
+</html>
