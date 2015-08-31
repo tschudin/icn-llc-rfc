@@ -735,68 +735,62 @@ implement identifiers according to the following MINIMAL lengths:
 Encoding Examples
 -----------------
 
-/// DEV NOTE: Below we do not fully comply with what is said above: the
-fields are not encoded as a list, but a sequence of list elements.  We
-could, perhaps should, add one (TL) just after the message type
-byte. This TL would show the number of bytes used by the fields, thus
-make the message self-contained. Right now we depend on the outer
-framing to get the total length of the message correct. As a
-consequdnce we could NOT, for example, do packet stuffing.
-
-
 a) LLT message 
 
 ~~~
-  llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 20 Bytes
+  llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 21 Bytes
  
-  0x81                   % msg type
-  0x8e                   % LID
-    0x86                 % SID
-      0x02 0x12 0x34
-      0x02 0x56 0x78
-    0x86                 % TID
-      0x02 0x11 0x11
-      0x02 0x11 0x11
-  0x03 0x61 0x62 0x63    % payload
+  0x81                     % msg type
+  0x93                     % 0x80 + total length
+    0x8e                   % LID
+      0x86                 % SID
+        0x02 0x12 0x34
+        0x02 0x56 0x78
+      0x86                 % TID
+        0x02 0x11 0x11
+        0x02 0x11 0x11
+    0x03 0x61 0x62 0x63    % payload
 ~~~
 
 b) RPC-request (start session)
 
 ~~~
-  rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 20 Bytes
+  rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 21 Bytes
 
-  0x82                   % msg type
-  0x8a                   % RID
-    0x84                 % SID
-      0x02 0x12 0x34
-      0x00
-    0x04                 % nonce
-      0x73 0x68 0x35 0x59
-  0x06                   % verb
-    0x5f 0x72 0x65 0x73 0x65 0x74
-  0x80                   % empty param list
+  0x82                     % msg type
+  0x93                     % 0x80 + total length
+    0x8a                   % RID
+      0x84                 % SID
+        0x02 0x12 0x34
+        0x00
+      0x04                 % nonce
+        0x73 0x68 0x35 0x59
+    0x06                   % verb
+      0x5f 0x72 0x65 0x73 0x65 0x74
+    0x80                   % empty param list
 ~~~
 
 c) RPC-response (session ack)
 
 ~~~
-  rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 16 Bytes
+  rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 17 Bytes
 
-  0x82                   % msg type
-  0x8c                   % RID
-    0x84                 % SID
-      0x02 0x12 0x34
-      0x02 0x56 0x78
-    0x04                 % nonce
-      0x73 0x68 0x35 0x59
-  0x01 0x00              % OK
-  0x80                   % empty param list
+  0x82                     % msg type
+  0x8f                     % 0x80 + total length
+    0x8c                   % RID
+      0x84                 % SID
+        0x02 0x12 0x34
+        0x02 0x56 0x78
+      0x04                 % nonce
+        0x73 0x68 0x35 0x59
+    0x01 0x00              % OK
+    0x80                   % empty param list
 ~~~
 
 
 
-Minimum MTU and Fragmentation of LLC messages
----------------------------------------------
+Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
+---------------------------------------------------------------
 
 None of the three message types (LLT-message, RPC-request,
 RPC-response) may be fragmented.
@@ -805,8 +799,10 @@ However, using RPC and being subject to negotiation, peers might use
 RPC to transfer parts of a larger message for remote assembly and then
 trigger the delivery of that remote memory block.
 
-The minimum MTU is XX bytes. This permits ...
+The minimum (link-level) MTU is XX bytes. This permits ...
 
+Multiple LLC messages can be combined into one frame as long as they
+fully fit into the link's MTU.
 
 Security Considerations
 =======================
