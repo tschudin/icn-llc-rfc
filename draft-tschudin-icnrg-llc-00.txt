@@ -78,10 +78,12 @@ Table of Contents
      5.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  11
      5.5.  Create Logical Link (thread)  . . . . . . . . . . . . . .  12
      5.6.  Destroy Logical Link (thread) . . . . . . . . . . . . . .  13
-   6.  Encoding (of RPC and parameters)  . . . . . . . . . . . . . .  13
-     6.1.  Minimum MTU and Fragmentation of LLC messages . . . . . .  13
-   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  14
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  14
+   6.  Encoding of Production Traffic and RPC Parameters . . . . . .  13
+     6.1.  Encoding of message type  . . . . . . . . . . . . . . . .  13
+     6.2.  Encoding of a message's fields (list encoding)  . . . . .  13
+     6.3.  Minimum MTU and Fragmentation of LLC messages . . . . . .  14
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  15
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  15
 
 1.  Introduction
 
@@ -105,14 +107,14 @@ Table of Contents
    and for production traffic.  Each endpoint is authenticated during
    this stage.
 
-   The hierarchy of control in ICN-LLC is shown below.
-
 
 
 Tschudin & Wood         Expires February 28, 2016               [Page 2]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   The hierarchy of control in ICN-LLC is shown below.
 
      +------------------------------------------------+
      |        1 Link (bidirectional transport)        |
@@ -158,9 +160,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    o  session manager: A control unit responsible for managing a session
       between two endpoints.
 
-   o  thread, or logical link: An isolated and ephemeral context managed
-      by a session manager in which encrypted traffic is sent between
-      two endpoints.
+
 
 
 
@@ -169,6 +169,10 @@ Tschudin & Wood         Expires February 28, 2016               [Page 3]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   o  thread, or logical link: An isolated and ephemeral context managed
+      by a session manager in which encrypted traffic is sent between
+      two endpoints.
 
    o  RPC-request: A request to perform an RPC action from a sender to a
       receiver.
@@ -201,10 +205,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    configured manually by system administrators.
 
 3.2.  Cast
-
-
-
-
 
 
 
@@ -697,30 +697,30 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
    named (SID, TIDBA) and (SID, TIDAB) above, cannot be close.  Instead,
    the "destroy-session" RPC must be used.
 
-6.  Encoding (of RPC and parameters)
+6.  Encoding of Production Traffic and RPC Parameters
 
-   Variation of Rivest's symbolic expressions [SEXPR]
+   Structurally, all three message types of ICN-LLC are identical in
+   being a list of fields.  A single header byte discriminates among the
+   message types, followed by an encoding of the message's field list:
 
-   in-memory format of sexp, relation to TLV
+        Byte 0    Bytes 1 to N-1
+     +---------+--------------//--+
+     | msgtype | listEncoding ....|
+     +---------+--------------//--+
 
-   highest bit to distinguish atom from list
+6.1.  Encoding of message type
 
-   0+len   octet string
-   1+len   list
+   The assigned values for the one-byte-header are:
 
-   A s-expression's length has a variable len encoding. X stands for the
-   list-bit:
+     0x81  llt-message
+     0x82  rpc-request
+     0x83  rpc-response
 
-   Encoding                      len bits  len range
+6.2.  Encoding of a message's fields (list encoding)
 
-   x0ll llll                       6 bits  0 .. 63
-   x10l llll llll llll            13 bits  64 .. 8191
-   x110 llll llll llll llll llll  20 bits  8192 .. 2^20-1
-
-6.1.  Minimum MTU and Fragmentation of LLC messages
-
-   None of the three message types (RPC-request, RPC-response, LLT-
-   traffic) may be fragmented.
+   ICN-LLC encodes lists in a similar way as was proposed by Rivest for
+   symbolic expressions [SEXPR].  The variation consists in combining
+   the "list bit" with a variable length field and in omitting the 0x00
 
 
 
@@ -730,7 +730,61 @@ Tschudin & Wood         Expires February 28, 2016              [Page 13]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-   The minimum MTU is XX bytes.
+   byte to signal the end-of-list (because the length field already
+   encodes this information).
+
+   In ICN-LLC, a data structure is represented as a two-tuple of
+   type+length and the content bytes: (TL, value).  The length tells the
+   amount of bytes needed to represent the value.
+
+   A data structure either is a list or an atom.  The general format for
+   a list is:
+
+     <list-bit=1, len-in-bytes> <element-1> ... <element-N>
+
+   where an element can be either another list or an atom.
+
+   The format for an atom is:
+
+     <list-bit=0, len-in-bytes> <blob>
+
+   Two atom types are defined (but the type is not made explicit in the
+   ICN-LLC encoding): Strings are encoded without trailing zero, integer
+   values are signed and are encoded in network order format.
+
+   The type+len information is encoded with a varying number of bytes
+   depending on the value of len.  In the following diagram, "L" stands
+   for the list-bit and "l" for a bit of the length value to be encoded
+   (unsigned, network order).
+
+     len value      encoding (bits)
+
+     0 .. 63        L0ll llll
+     64 .. 8191     L10l llll  llll llll
+     8192..1048575  L110 llll  llll llll  llll llll
+     reserved       L111 ...
+
+6.3.  Minimum MTU and Fragmentation of LLC messages
+
+   None of the three message types (LLT-message, RPC-request, RPC-
+   response) may be fragmented.
+
+   However, using RPC and being subject to negotiation, peers might use
+   RPC to transfer parts of a larger message for remote assembly and
+   then trigger the delivery of that remote memory block.
+
+   The minimum MTU is XX bytes.  This permits ...
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 14]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
 7.  Security Considerations
 
@@ -781,4 +835,6 @@ Authors' Addresses
 
 
 
-Tschudin & Wood         Expires February 28, 2016              [Page 14]
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 15]

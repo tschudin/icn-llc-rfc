@@ -631,37 +631,89 @@ Note that the two threads representing the logical control link, named
 <!-- //// I stopped editing here (cft) -->
 
 
-Encoding (of RPC and parameters)
-================================
+Encoding of Production Traffic and RPC Parameters
+=================================================
 
-Variation of Rivest's symbolic expressions [SEXPR]
-
-in-memory format of sexp, relation to TLV
+Structurally, all three message types of ICN-LLC are identical in
+being a list of fields. A single header byte discriminates among the
+message types, followed by an encoding of the message's field list:
 
 ~~~
-highest bit to distinguish atom from list
+     Byte 0    Bytes 1 to N-1
+  +---------+--------------//--+
+  | msgtype | listEncoding ....|
+  +---------+--------------//--+
+~~~
 
-0+len   octet string
-1+len   list
+Encoding of message type
+------------------------
 
-A s-expression's length has a variable len encoding. X stands for the
-list-bit:
+The assigned values for the one-byte-header are:
 
-Encoding                      len bits  len range
-                              
-x0ll llll                       6 bits  0 .. 63
-x10l llll llll llll            13 bits  64 .. 8191
-x110 llll llll llll llll llll  20 bits  8192 .. 2^20-1
+~~~
+  0x81  llt-message
+  0x82  rpc-request
+  0x83  rpc-response
+~~~
+
+
+Encoding of a message's fields (list encoding)
+-------------------------------------------
+
+ICN-LLC encodes lists in a similar way as was proposed by Rivest for
+symbolic expressions [SEXPR]. The variation consists in combining the
+"list bit" with a variable length field and in omitting the 0x00
+byte to signal the end-of-list (because the length field already
+encodes this information).
+
+In ICN-LLC, a data structure is represented as a two-tuple of
+type+length and the content bytes: (TL, value). The length tells the
+amount of bytes needed to represent the value.
+
+A data structure either is a list or an atom. The general format for a list is:
+
+~~~
+  <list-bit=1, len-in-bytes> <element-1> ... <element-N>
+~~~
+
+where an element can be either another list or an atom.
+
+The format for an atom is:
+
+~~~
+  <list-bit=0, len-in-bytes> <blob>
+~~~
+
+Two atom types are defined (but the type is not made explicit in the
+ICN-LLC encoding): Strings are encoded without trailing zero, integer
+values are signed and are encoded in network order format.
+
+The type+len information is encoded with a varying number of bytes
+depending on the value of len. In the following diagram, "L" stands
+for the list-bit and "l" for a bit of the length value to be encoded
+(unsigned, network order).
+
+~~~
+  len value      encoding (bits)
+
+  0 .. 63        L0ll llll
+  64 .. 8191     L10l llll  llll llll
+  8192..1048575  L110 llll  llll llll  llll llll
+  reserved       L111 ...
 ~~~
 
 
 Minimum MTU and Fragmentation of LLC messages
 ---------------------------------------------
 
-None of the three message types (RPC-request, RPC-response, LLT-traffic)
-may be fragmented.
+None of the three message types (LLT-message, RPC-request,
+RPC-response) may be fragmented.
 
-The minimum MTU is XX bytes.
+However, using RPC and being subject to negotiation, peers might use
+RPC to transfer parts of a larger message for remote assembly and then
+trigger the delivery of that remote memory block.
+
+The minimum MTU is XX bytes. This permits ...
 
 
 Security Considerations
