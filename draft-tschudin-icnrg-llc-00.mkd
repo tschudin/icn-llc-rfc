@@ -773,9 +773,9 @@ b) RPC-request (start session)
 c) RPC-response (session ack)
 
 ~~~
-  rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 17 Bytes
+  rpc-response(((0x1234,0x5678)0x73683559)0x00()) --> 17 Bytes
 
-  0x82                     % msg type
+  0x83                     % msg type
   0x8f                     % 0x80 + total length
     0x8c                   % RID
       0x84                 % SID
