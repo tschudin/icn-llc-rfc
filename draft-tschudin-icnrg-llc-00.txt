@@ -79,10 +79,8 @@ Table of Contents
      5.5.  Create Logical Link (thread)  . . . . . . . . . . . . . .  12
      5.6.  Destroy Logical Link (thread) . . . . . . . . . . . . . .  13
    6.  Encoding (of RPC and parameters)  . . . . . . . . . . . . . .  13
-   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  13
-   Appendix A.  References . . . . . . . . . . . . . . . . . . . . .  13
-   Appendix B.  RPC and Configuration Name Space . . . . . . . . . .  13
-   Appendix C.  Example  . . . . . . . . . . . . . . . . . . . . . .  14
+     6.1.  Minimum MTU and Fragmentation of LLC messages . . . . . .  13
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  14
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  14
 
 1.  Introduction
@@ -107,14 +105,14 @@ Table of Contents
    and for production traffic.  Each endpoint is authenticated during
    this stage.
 
+   The hierarchy of control in ICN-LLC is shown below.
+
 
 
 Tschudin & Wood         Expires February 28, 2016               [Page 2]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
-
-   The hierarchy of control in ICN-LLC is shown below.
 
      +------------------------------------------------+
      |        1 Link (bidirectional transport)        |
@@ -160,7 +158,9 @@ Internet-Draft                   ICN-LLC                     August 2015
    o  session manager: A control unit responsible for managing a session
       between two endpoints.
 
-
+   o  thread, or logical link: An isolated and ephemeral context managed
+      by a session manager in which encrypted traffic is sent between
+      two endpoints.
 
 
 
@@ -169,10 +169,6 @@ Tschudin & Wood         Expires February 28, 2016               [Page 3]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
-
-   o  thread, or logical link: An isolated and ephemeral context managed
-      by a session manager in which encrypted traffic is sent between
-      two endpoints.
 
    o  RPC-request: A request to perform an RPC action from a sender to a
       receiver.
@@ -205,6 +201,10 @@ Internet-Draft                   ICN-LLC                     August 2015
    configured manually by system administrators.
 
 3.2.  Cast
+
+
+
+
 
 
 
@@ -699,28 +699,28 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
 
 6.  Encoding (of RPC and parameters)
 
-   Rivest-s symbolic expressions, see
-   http://people.csail.mit.edu/rivest/Sexp.txt
+   Variation of Rivest's symbolic expressions [SEXPR]
 
-   memory format of sexp, relation to TLV
+   in-memory format of sexp, relation to TLV
 
-7.  Security Considerations
+   highest bit to distinguish atom from list
 
-   yes
+   0+len   octet string
+   1+len   list
 
-Appendix A.  References
+   A s-expression's length has a variable len encoding. X stands for the
+   list-bit:
 
-   Network pointers
+   Encoding                      len bits  len range
 
-Appendix B.  RPC and Configuration Name Space
+   x0ll llll                       6 bits  0 .. 63
+   x10l llll llll llll            13 bits  64 .. 8191
+   x110 llll llll llll llll llll  20 bits  8192 .. 2^20-1
 
-   Verbs: ~~~ OK FAIL create ... ~~~
+6.1.  Minimum MTU and Fragmentation of LLC messages
 
-   State: ~~~ /proto/icn/....
-
-   /conf/icnllc-version /conf/preferredMTU /conf/MTU ~~~
-
-
+   None of the three message types (RPC-request, RPC-response, LLT-
+   traffic) may be fragmented.
 
 
 
@@ -730,7 +730,11 @@ Tschudin & Wood         Expires February 28, 2016              [Page 13]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-Appendix C.  Example
+   The minimum MTU is XX bytes.
+
+7.  Security Considerations
+
+   yes
 
 Authors' Addresses
 
@@ -744,10 +748,6 @@ Authors' Addresses
    PARC
 
    Email: cwood@parc.com
-
-
-
-
 
 
 

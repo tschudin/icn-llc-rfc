@@ -634,9 +634,34 @@ Note that the two threads representing the logical control link, named
 Encoding (of RPC and parameters)
 ================================
 
-Rivest-s symbolic expressions, see http://people.csail.mit.edu/rivest/Sexp.txt
+Variation of Rivest's symbolic expressions [SEXPR]
 
-memory format of sexp, relation to TLV
+in-memory format of sexp, relation to TLV
+
+~~~
+highest bit to distinguish atom from list
+
+0+len   octet string
+1+len   list
+
+A s-expression's length has a variable len encoding. X stands for the
+list-bit:
+
+Encoding                      len bits  len range
+                              
+x0ll llll                       6 bits  0 .. 63
+x10l llll llll llll            13 bits  64 .. 8191
+x110 llll llll llll llll llll  20 bits  8192 .. 2^20-1
+~~~
+
+
+Minimum MTU and Fragmentation of LLC messages
+---------------------------------------------
+
+None of the three message types (RPC-request, RPC-response, LLT-traffic)
+may be fragmented.
+
+The minimum MTU is XX bytes.
 
 
 Security Considerations
@@ -662,7 +687,7 @@ Verbs:
   create ...
 ~~~
 
-State:
+Constants and "state registers" (MIB):
 ~~~
   /proto/icn/....
   
@@ -672,5 +697,8 @@ State:
 ~~~
 
 
-Example  {#xmp}
-=======
+Examples  {#xmp}
+========
+
+0000 0000  zero-length string
+1000 0000  empty list (NIL)
