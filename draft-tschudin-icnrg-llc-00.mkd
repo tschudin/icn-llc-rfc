@@ -555,8 +555,8 @@ On failure:
 {: #set-mtu-msg title="Set the MTU."}
 
 
-Create Logical Link (thread)
-----------------------------
+Create Logical Link (= thread)
+------------------------------
 
 After a session and SA have been established, the protocol-specific
 links (threads) must be created. This is done with the following
@@ -603,8 +603,8 @@ for their respective traffic. This could be changed by allowing endpoints
 to negotiate these parameters during the thread creation exchange.
 
 
-Destroy Logical Link (thread)
------------------------------
+Destroy Logical Link (= thread)
+-------------------------------
 
 Finally, when a thread is finished, it must be destroyed and all state
 must be recycled. This is done with the following exchange.
@@ -646,8 +646,8 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
 ~~~
 
 
-Encoding of Production Traffic and RPC Parameters
-=================================================
+Encoding of Non-control Traffic and RPC Parameters
+==================================================
 
 Structurally, all three message types of ICN-LLC are identical in
 being a list of fields. A single header byte discriminates among the
@@ -734,6 +734,15 @@ implement identifiers according to the following MINIMAL lengths:
 
 Encoding Examples
 -----------------
+
+/// DEV NOTE: Below we do not fully comply with what is said above: the
+fields are not encoded as a list, but a sequence of list elements.  We
+could, perhaps should, add one (TL) just after the message type
+byte. This TL would show the number of bytes used by the fields, thus
+make the message self-contained. Right now we depend on the outer
+framing to get the total length of the message correct. As a
+consequdnce we could NOT, for example, do packet stuffing.
+
 
 a) LLT message 
 

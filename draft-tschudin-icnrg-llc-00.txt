@@ -76,10 +76,10 @@ Table of Contents
      5.2.  Inspection (Get MTU)  . . . . . . . . . . . . . . . . . .   9
      5.3.  Secure Association Establishment  . . . . . . . . . . . .   9
      5.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  11
-     5.5.  Create Logical Link (thread)  . . . . . . . . . . . . . .  12
-     5.6.  Destroy Logical Link (thread) . . . . . . . . . . . . . .  13
+     5.5.  Create Logical Link (= thread)  . . . . . . . . . . . . .  12
+     5.6.  Destroy Logical Link (= thread) . . . . . . . . . . . . .  13
      5.7.  Keep-Alive  . . . . . . . . . . . . . . . . . . . . . . .  13
-   6.  Encoding of Production Traffic and RPC Parameters . . . . . .  13
+   6.  Encoding of Non-control Traffic and RPC Parameters  . . . . .  13
      6.1.  Encoding of message type  . . . . . . . . . . . . . . . .  14
      6.2.  Encoding of a message's fields (list encoding)  . . . . .  14
      6.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  15
@@ -87,7 +87,7 @@ Table of Contents
      6.5.  Minimum MTU and Fragmentation of LLC messages . . . . . .  16
    7.  Security Considerations . . . . . . . . . . . . . . . . . . .  16
    8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  16
-   9.  RPC Verbs and Configuration Name Space  . . . . . . . . . . .  16
+   9.  RPC Verbs and Configuration Name Space  . . . . . . . . . . .  17
    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  17
 
 1.  Introduction
@@ -618,7 +618,7 @@ Tschudin & Wood         Expires February 28, 2016              [Page 11]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-5.5.  Create Logical Link (thread)
+5.5.  Create Logical Link (= thread)
 
    After a session and SA have been established, the protocol-specific
    links (threads) must be created.  This is done with the following
@@ -674,7 +674,7 @@ Tschudin & Wood         Expires February 28, 2016              [Page 12]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-5.6.  Destroy Logical Link (thread)
+5.6.  Destroy Logical Link (= thread)
 
    Finally, when a thread is finished, it must be destroyed and all
    state must be recycled.  This is done with the following exchange.
@@ -708,7 +708,7 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
    Q<--R: llt-message(LIDBA, encrypt(Key-AB,
                       rpc-response((SID, nonce), OK, NIL)))
 
-6.  Encoding of Production Traffic and RPC Parameters
+6.  Encoding of Non-control Traffic and RPC Parameters
 
    Structurally, all three message types of ICN-LLC are identical in
    being a list of fields.  A single header byte discriminates among the
@@ -798,6 +798,15 @@ Internet-Draft                   ICN-LLC                     August 2015
 
 6.4.  Encoding Examples
 
+   /// DEV NOTE: Below we do not fully comply with what is said above:
+   the fields are not encoded as a list, but a sequence of list
+   elements.  We could, perhaps should, add one (TL) just after the
+   message type byte.  This TL would show the number of bytes used by
+   the fields, thus make the message self-contained.  Right now we
+   depend on the outer framing to get the total length of the message
+   correct.  As a consequdnce we could NOT, for example, do packet
+   stuffing.
+
    a) LLT message
 
      llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 20 Bytes
@@ -814,6 +823,25 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    b) RPC-request (start session)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 15]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
      rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 20 Bytes
 
      0x82                   % msg type
@@ -828,19 +856,6 @@ Internet-Draft                   ICN-LLC                     August 2015
      0x80                   % empty param list
 
    c) RPC-response (session ack)
-
-
-
-
-
-
-
-
-
-Tschudin & Wood         Expires February 28, 2016              [Page 15]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
      rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 16 Bytes
 
@@ -876,6 +891,13 @@ Internet-Draft                   ICN-LLC                     August 2015
    o  Network pointers
       http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps
 
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 16]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
 9.  RPC Verbs and Configuration Name Space
 
    Verbs:
@@ -890,13 +912,6 @@ Internet-Draft                   ICN-LLC                     August 2015
      PROVE-IDENTITY
      THREAD-CREATE
      THREAD-DESTROY
-
-
-
-Tschudin & Wood         Expires February 28, 2016              [Page 16]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Constants and "state registers" (MIB):
 
@@ -918,21 +933,6 @@ Authors' Addresses
    PARC
 
    Email: cwood@parc.com
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
