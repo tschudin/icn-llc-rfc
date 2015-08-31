@@ -481,7 +481,7 @@ authenticate the requestor.
 
 Note also that Encrypt(K,M) stands for the ciphertext resulting from
 applying key K to message M and Signature(K,M) for a signature of M
-using key KL.
+using key K.
 
 ~~~
 Q-->R: rpc-request((SID, nonceA), “prove-identity",
