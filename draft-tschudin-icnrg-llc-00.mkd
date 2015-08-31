@@ -429,7 +429,7 @@ from an endpoint, e.g., the preferred MTU size. The RPC exchange
 for an inspection message is as follows.
 
 ~~~
-Q-->R: rpc-request(SID, nonce), “lookup", ("/conf/preferredMTU"))
+Q-->R: rpc-request(SID, nonce), LOOKUP, ("/conf/preferredMTU"))
 
 On success:
   Q<--R: rpc-response((SID, nonce), OK, (<MTU value>))
@@ -631,6 +631,21 @@ Note that the two threads representing the logical control link, named
 <!-- //// I stopped editing here (cft) -->
 
 
+Keep-Alive
+----------
+
+Use the NOOP call to verify that the peer session manager is still up
+and running.
+
+~~~
+Q-->R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), NOOP, NIL)))
+
+Q<--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
+~~~
+
+
 Encoding of Production Traffic and RPC Parameters
 =================================================
 
@@ -703,6 +718,74 @@ for the list-bit and "l" for a bit of the length value to be encoded
 ~~~
 
 
+Length of Identifier Fields
+---------------------------
+
+Although fields can vary in length and therefore, for example, a
+threadID could consist of two 8-bit values, it is recommended to
+implement identifiers according to the following MINIMAL lengths:
+
+~~~
+  4 Bytes    nonce
+  2x2 Bytes  session ID
+  2x2 Bytes  thread ID
+~~~
+
+
+Encoding Examples
+-----------------
+
+a) LLT message 
+
+~~~
+  llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 20 Bytes
+ 
+  0x81                   % msg type
+  0x8e                   % LID
+    0x86                 % SID
+      0x02 0x12 0x34
+      0x02 0x56 0x78
+    0x86                 % TID
+      0x02 0x11 0x11
+      0x02 0x11 0x11
+  0x03 0x61 0x62 0x63    % payload
+~~~
+
+b) RPC-request (start session)
+
+~~~
+  rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 20 Bytes
+
+  0x82                   % msg type
+  0x8a                   % RID
+    0x84                 % SID
+      0x02 0x12 0x34
+      0x00
+    0x04                 % nonce
+      0x73 0x68 0x35 0x59
+  0x06                   % verb
+    0x5f 0x72 0x65 0x73 0x65 0x74
+  0x80                   % empty param list
+~~~
+
+c) RPC-response (session ack)
+
+~~~
+  rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 16 Bytes
+
+  0x82                   % msg type
+  0x8c                   % RID
+    0x84                 % SID
+      0x02 0x12 0x34
+      0x02 0x56 0x78
+    0x04                 % nonce
+      0x73 0x68 0x35 0x59
+  0x01 0x00              % OK
+  0x80                   % empty param list
+~~~
+
+
+
 Minimum MTU and Fragmentation of LLC messages
 ---------------------------------------------
 
@@ -721,36 +804,41 @@ Security Considerations
 
 yes
 
---- back
-
 References
 ==========
 
-Network pointers
+
+* S-expressions   http://people.csail.mit.edu/rivest/Sexp.txt
+* Network pointers http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps
 
 
-RPC and Configuration Name Space
-================================
+RPC Verbs and Configuration Name Space
+======================================
 
 Verbs:
+
 ~~~
-  OK
-  FAIL
-  create ...
+  OK               byte 0x00
+  FAIL             byte 0x01
+  START-SESSION    "_rst"    , or "HELO" ....
+  END-SESSION      "_fin"
+  LOOKUP           "_get"
+  CONFIGURE        "_set"
+  NOOP             "_nop"
+  PROVE-IDENTITY
+  THREAD-CREATE
+  THREAD-DESTROY
 ~~~
 
 Constants and "state registers" (MIB):
+
 ~~~
   /proto/icn/....
   
-  /conf/icnllc-version
-  /conf/preferredMTU
-  /conf/MTU
+  /conf/rw/icnllc-version
+  /conf/ro/preferredMTU
+  /conf/rw/MTU
 ~~~
 
+--- back
 
-Examples  {#xmp}
-========
-
-0000 0000  zero-length string
-1000 0000  empty list (NIL)

@@ -78,12 +78,17 @@ Table of Contents
      5.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  11
      5.5.  Create Logical Link (thread)  . . . . . . . . . . . . . .  12
      5.6.  Destroy Logical Link (thread) . . . . . . . . . . . . . .  13
+     5.7.  Keep-Alive  . . . . . . . . . . . . . . . . . . . . . . .  13
    6.  Encoding of Production Traffic and RPC Parameters . . . . . .  13
-     6.1.  Encoding of message type  . . . . . . . . . . . . . . . .  13
-     6.2.  Encoding of a message's fields (list encoding)  . . . . .  13
-     6.3.  Minimum MTU and Fragmentation of LLC messages . . . . . .  14
-   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  15
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  15
+     6.1.  Encoding of message type  . . . . . . . . . . . . . . . .  14
+     6.2.  Encoding of a message's fields (list encoding)  . . . . .  14
+     6.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  15
+     6.4.  Encoding Examples . . . . . . . . . . . . . . . . . . . .  15
+     6.5.  Minimum MTU and Fragmentation of LLC messages . . . . . .  16
+   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  16
+   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  16
+   9.  RPC Verbs and Configuration Name Space  . . . . . . . . . . .  16
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  17
 
 1.  Introduction
 
@@ -101,11 +106,6 @@ Table of Contents
    transport mechanism to enable bidirectional communication.  A single
    session is establish over this link for end-to-end control.  This
    session is used to control, for example, the session (and in
-   consequence also the ICN protocols') MTU size before encryption is
-   turned on between the two endpoints.  Within this session, encrypted
-   logical channels, called threads, are established both for control
-   and for production traffic.  Each endpoint is authenticated during
-   this stage.
 
 
 
@@ -113,6 +113,12 @@ Tschudin & Wood         Expires February 28, 2016               [Page 2]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   consequence also the ICN protocols') MTU size before encryption is
+   turned on between the two endpoints.  Within this session, encrypted
+   logical channels, called threads, are established both for control
+   and for production traffic.  Each endpoint is authenticated during
+   this stage.
 
    The hierarchy of control in ICN-LLC is shown below.
 
@@ -157,18 +163,15 @@ Internet-Draft                   ICN-LLC                     August 2015
    o  session: A semi-permanent context in which (possibly encrypted)
       information is exchanged over a link between two endpoints.
 
-   o  session manager: A control unit responsible for managing a session
-      between two endpoints.
-
-
-
-
 
 
 Tschudin & Wood         Expires February 28, 2016               [Page 3]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   o  session manager: A control unit responsible for managing a session
+      between two endpoints.
 
    o  thread, or logical link: An isolated and ephemeral context managed
       by a session manager in which encrypted traffic is sent between
@@ -205,9 +208,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    configured manually by system administrators.
 
 3.2.  Cast
-
-
-
 
 
 
@@ -470,7 +470,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    an endpoint, e.g., the preferred MTU size.  The RPC exchange for an
    inspection message is as follows.
 
-   Q-->R: rpc-request(SID, nonce), "lookup", ("/conf/preferredMTU"))
+   Q-->R: rpc-request(SID, nonce), LOOKUP, ("/conf/preferredMTU"))
 
    On success:
      Q<--R: rpc-response((SID, nonce), OK, (<MTU value>))
@@ -697,6 +697,17 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
    named (SID, TIDBA) and (SID, TIDAB) above, cannot be close.  Instead,
    the "destroy-session" RPC must be used.
 
+5.7.  Keep-Alive
+
+   Use the NOOP call to verify that the peer session manager is still up
+   and running.
+
+   Q-->R: llt-message(LIDAB, encrypt(KeyAB,
+                      rpc-request((SID, nonce), NOOP, NIL)))
+
+   Q<--R: llt-message(LIDBA, encrypt(Key-AB,
+                      rpc-response((SID, nonce), OK, NIL)))
+
 6.  Encoding of Production Traffic and RPC Parameters
 
    Structurally, all three message types of ICN-LLC are identical in
@@ -707,6 +718,17 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
      +---------+--------------//--+
      | msgtype | listEncoding ....|
      +---------+--------------//--+
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 13]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
 6.1.  Encoding of message type
 
@@ -721,15 +743,6 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
    ICN-LLC encodes lists in a similar way as was proposed by Rivest for
    symbolic expressions [SEXPR].  The variation consists in combining
    the "list bit" with a variable length field and in omitting the 0x00
-
-
-
-
-Tschudin & Wood         Expires February 28, 2016              [Page 13]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    byte to signal the end-of-list (because the length field already
    encodes this information).
 
@@ -764,7 +777,84 @@ Internet-Draft                   ICN-LLC                     August 2015
      8192..1048575  L110 llll  llll llll  llll llll
      reserved       L111 ...
 
-6.3.  Minimum MTU and Fragmentation of LLC messages
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 14]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+6.3.  Length of Identifier Fields
+
+   Although fields can vary in length and therefore, for example, a
+   threadID could consist of two 8-bit values, it is recommended to
+   implement identifiers according to the following MINIMAL lengths:
+
+     4 Bytes    nonce
+     2x2 Bytes  session ID
+     2x2 Bytes  thread ID
+
+6.4.  Encoding Examples
+
+   a) LLT message
+
+     llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 20 Bytes
+
+     0x81                   % msg type
+     0x8e                   % LID
+       0x86                 % SID
+         0x02 0x12 0x34
+         0x02 0x56 0x78
+       0x86                 % TID
+         0x02 0x11 0x11
+         0x02 0x11 0x11
+     0x03 0x61 0x62 0x63    % payload
+
+   b) RPC-request (start session)
+
+     rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 20 Bytes
+
+     0x82                   % msg type
+     0x8a                   % RID
+       0x84                 % SID
+         0x02 0x12 0x34
+         0x00
+       0x04                 % nonce
+         0x73 0x68 0x35 0x59
+     0x06                   % verb
+       0x5f 0x72 0x65 0x73 0x65 0x74
+     0x80                   % empty param list
+
+   c) RPC-response (session ack)
+
+
+
+
+
+
+
+
+
+Tschudin & Wood         Expires February 28, 2016              [Page 15]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+     rpc-request(((0x1234,0x5678)0x73683559)0x00()) --> 16 Bytes
+
+     0x82                   % msg type
+     0x8c                   % RID
+       0x84                 % SID
+         0x02 0x12 0x34
+         0x02 0x56 0x78
+       0x04                 % nonce
+         0x73 0x68 0x35 0x59
+     0x01 0x00              % OK
+     0x80                   % empty param list
+
+6.5.  Minimum MTU and Fragmentation of LLC messages
 
    None of the three message types (LLT-message, RPC-request, RPC-
    response) may be fragmented.
@@ -775,20 +865,46 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    The minimum MTU is XX bytes.  This permits ...
 
+7.  Security Considerations
+
+   yes
+
+8.  References
+
+   o  S-expressions http://people.csail.mit.edu/rivest/Sexp.txt
+
+   o  Network pointers
+      http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps
+
+9.  RPC Verbs and Configuration Name Space
+
+   Verbs:
+
+     OK               byte 0x00
+     FAIL             byte 0x01
+     START-SESSION    "_rst"    , or "HELO" ....
+     END-SESSION      "_fin"
+     LOOKUP           "_get"
+     CONFIGURE        "_set"
+     NOOP             "_nop"
+     PROVE-IDENTITY
+     THREAD-CREATE
+     THREAD-DESTROY
 
 
 
-
-
-
-Tschudin & Wood         Expires February 28, 2016              [Page 14]
+Tschudin & Wood         Expires February 28, 2016              [Page 16]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-7.  Security Considerations
+   Constants and "state registers" (MIB):
 
-   yes
+     /proto/icn/....
+
+     /conf/rw/icnllc-version
+     /conf/ro/preferredMTU
+     /conf/rw/MTU
 
 Authors' Addresses
 
@@ -833,8 +949,4 @@ Authors' Addresses
 
 
 
-
-
-
-
-Tschudin & Wood         Expires February 28, 2016              [Page 15]
+Tschudin & Wood         Expires February 28, 2016              [Page 17]
