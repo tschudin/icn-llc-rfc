@@ -755,18 +755,18 @@ a) LLT message
 b) RPC-request (start session)
 
 ~~~
-  rpc-request(((0x1234,0)0x73683559)"_reset"()) --> 21 Bytes
+  rpc-request(((0x1234,0)0x73683559)"_rst"()) --> 19 Bytes
 
   0x82                     % msg type
-  0x93                     % 0x80 + total length
+  0x91                     % 0x80 + total length
     0x8a                   % RID
       0x84                 % SID
         0x02 0x12 0x34
         0x00
       0x04                 % nonce
         0x73 0x68 0x35 0x59
-    0x06                   % verb
-      0x5f 0x72 0x65 0x73 0x65 0x74
+    0x04                   % verb
+      0x5f 0x72 0x73 0x74
     0x80                   % empty param list
 ~~~
 
