@@ -159,6 +159,8 @@ The following terms are used:
   by a session manager in which encrypted traffic is sent between two
   endpoints.
 
+* secure association: A context
+
 * RPC-request: A request to perform an RPC action from a sender to a receiver.
 
 * RPC-response: A response to an RPC-request sent from RPC-request
@@ -188,17 +190,20 @@ that, for example, enable bidirectional firewall traversal.
 (2) The underlying link protocol provides the most basic ability to
 frame/encapsulate and move an arbitrary (up to some maximum) sized
 payload from one endpoint to another. We do not assume ordered or
-reliable datagram transfer.
+reliable datagram transfer. Thus, the protocol is entirely
+transport-agnostic.
 
-(3) Each endpoint has a cryptographic identity and can prove its
-identity to the other endpoints over the respective links.
+(3) Each endpoint has or can generate a cryptographic identity and can
+prove its identity to the other endpoints over the respective links.
 
-(4) To this end, endpoints are pre-configured with one or more trust
+(4) Endpoints are pre-configured with one or more trust
 anchors permitting them to identity other endpoints that they trust
 i.e., those endpoints that are allowed to participate in the execution
 of the ICN-LLC protocol. These identities could be ascertained online
 (making us of the trust anchors) or be pre-configured manually by
 system administrators.
+
+(5) All LLC traffic must be protected using authenticated encryption.
 
 Cast
 ----
@@ -221,8 +226,6 @@ Cast
 ~~~
 {: #llc-cast title="Entities in ICN-LLC after secure association: all
 logical links of the session are encrypted and authenticated."}
-
-
 
 API for Endpoint Clients
 ------------------------
@@ -310,7 +313,6 @@ session's pipes, are managed by remote procedure operations. To this
 end, two message types "RPC-request" and "RPC-response" are needed. A
 third message type serves to recognize actual production (=
 non-control) traffic, called "logical link traffic".
-
 In the subsequent sections we describe these three message types and
 their fields, as well as the INC-LLC protocol, in an encoding-neutral
 way using prefixed lists. For example, a packet with the fields
@@ -387,24 +389,91 @@ in this case of two numbers. Often, pipes are used in pairs (for
 bidirectional interconnection of ICN clients) in which case the
 tuple's values are swapped.
 
+Motivating the RPC encoding
+---------------------------
+This RPC-based mechanism is entirely protocol- and transport-agnostic, and enables each endpoint to
+operate without making assumptions about the implementation details, e.g.,
+nonce size, session and pipe management, etc., of the other endpoint.
+Link-local names for control messages for all protocols (CCNx 0.8x, NDN 2013,
+CCNx 1.0, etc.) could be adopted in lieu of these RPC messages. However, this requires
+that each endhost understand and use the same naming scheme. Moreover,
+managing the link for non-ICN traffic purposes (e.g., setting the MTU size),
+should be done independently of the protocol that exchanges traffic across the link.
 
-Negotiation Tasks
-=================
+LLC Identities and Security
+===========================
 
-We now describe the major negotiation tasks (RPC calls) that make up
-the LLC protocol.
+The concept of endpoint identity is crucial to the operation and execution
+of the LLC protocol. Identities are used to authenticate endpoints so as to
+establish a secure (but possibly untrusted) association. Cryptographically,
+an identity is associated with some keying material, e.g., a public and private
+key pair, or a pre-shared key. In this document, we consider two types of identities:
 
-{XXX.cft: say something about the negotiation style: select/set
-instead of haggle}
+1) [EPHEMERAL-IDENTITY] Ephemeral (short-term, on-demand) identities that are not certified
+by a trust anchor. This type of identity could be backed by an ephemeral
+public and private key pair or a symmetric key, all of which are generated
+at random and used for the purposes of a single session.
 
-{XXX.cft: say something about the required RPC failure semantics
-(at-least-once vs at-most-once)}
+2) [TRUSTED-IDENTITY] Long-term identities that are backed by a trust anchor. This type of identity
+could be represented as a certificate signed by a trusted Certification
+Authority (CA), or a pre-shared key that is was installed by a device manufacturer.
 
-Any side can initiate a remote procedure call at any time. It is
-suggested to limit the number of RPCs that one side issues in parallel
+Using these two types of identities, endpoints prove their identity using one
+of these identity types. This ensures that, at a minimum, each endpoint is
+communicating with another endpoint which continually proves its identity
+by virtue of the fact that it uses the appropriate cryptographic keys for
+LLC message encryption. Put another way, by minimally enforcing endpoint
+authentication using ephemeral identities, each endpoint is assured that they
+are always communicating with the endhost with whom the LLC session was initiated.
+
+Again, at a minimum, authentication based on ephemeral identities is mandatory.
+Each endpoint may opt for strong authentication using a long-term identity.
+For example, one endhost may use an ephemeral identity to authenticate itself
+with another endpoint using a long-term identity, or vice versa. Alternatively,
+both endpoints may use long-term identities during authentication. These
+combinatorial options are outlined below.
+
+1) Both endpoints authenticate themselves with ephemeral identities. This type of
+configuration may be suitable for two endpoints (i.e., a consumer device and
+forwarder) which are both within a common enterprise network.
+2) One endpoint authenticates itself with an ephemeral identity, and the other
+authenticates itself with a long-term identity. This type of configuration is
+appropriate in cases where an access point should only allow trusted clients
+to connect send traffic to the network. In such a scenario, clients would possess
+long-term identities that are trusted by the access point, whereas the access
+point uses an ephemeral identity since consumers need not care about its trustworthiness.
+3) Both endpoints authenticate themselves with long-term identities. This type of
+configuration may be suitable for two core routers or forwarders in the public Internet.
+
+<!-- 1) both sides use ephemeral identities: minimal requirement -->
+<!-- 2) one and the other: access point -->
+<!-- 3) both long-term trusted identities and mutual authentication: core networks -->
+
+Note that supporting ephemeral identities for authentication enables traffic
+to flow freely through an endpoint. This may be undesireable in some cases (i.e.,
+for a router in the public Internet), but may be acceptable for others (i.e.,
+a forwarder within a trusted enterprise network).
+
+LLC Negotiation
+===============
+
+We now describe the negotiation procedures and tasks (RPC calls) that are used
+in the LLC protocol. Any side can initiate a remote procedure call at any time.
+It is suggested to limit the number of RPCs that one side issues in parallel
 to four (including nesting). For simplicity, we refer to each of the
 endpoints in the protocol as Q for Questioner and R for Responder.
 
+The negotion tasks are performed imperatively: a questioner first selects
+the supported or provided values for a given option from
+the responder, and then subsequently sets the value of said option
+using one of the supported values. Failures occur when a questioner
+fails to use or provide a correct value for the responder (i.e.,
+an invalid MTU value is set, or an unsupported cryptographic algorithm
+is specified). In all cases, when failures occur, the responder
+replies with a negative acknowledgement flag (FAIL) and lists
+the reason for the failure. The failure reason indicates only
+what option, command, or parameter was invalid, and does not provide
+details or possible remediation actions.
 
 Session Initialization
 ----------------------
@@ -471,17 +540,25 @@ traffic, including RPC exchanges, to be authenticated and
 encrypted. The goal is for each endpoint to authenticate the entity
 running on the other endpoint of a given link, and to then establish
 shared symmetric keys to perform authenticated encryption of all
-traffic that follows the exchange.  Currently, we specify a simple
-challenge-response mutual authentication protocol.  This can be
-replaced with any functionally equivalent protocol.
+traffic that follows the exchange. Currently, we specify a simple
+challenge-response authentication protocol that enables
+mutual authentication with ephemeral identities.
+This can be replaced with any functionally equivalent protocol.
 
-Note that the SA involves nested RPCs: The responder to the initial
+Note that authorization is distinctly separate from SA authentication, and is based on
+the set of trusted identities in possession by each endpoint. For example,
+an endpoint will authenticate another endpoint requesting to establish
+a SA, but it will not authorize the endpoint unless the identity it
+used to authenticate itself is trusted by the receiver. Therefore, it
+should be clear that authorization is not possible with ephemeral identities;
+authorization can only happen with long-term trusted identities.
+
+Also, observe that the SA involves nested RPCs: The responder to the initial
 RPC request will do an RPC in reverse direction in order to
 authenticate the requestor.
 
-Note also that Encrypt(K,M) stands for the ciphertext resulting from
-applying key K to message M and Signature(K,M) for a signature of M
-using key K.
+Finally, for notational purposes, Encrypt(K,M) stands for the ciphertext resulting
+from applying key K to message M and Signature(K,M) for a signature of M using key K.
 
 ~~~
 Q-->R: rpc-request((SID, nonceA), “prove-identity",
@@ -494,11 +571,11 @@ Q<--R: rpc-request((SID, nonceB), “prove-identity"
 
 Q-->R: rpc-response((SID, nonceB), OK,
                     (Signature(key-Q, challengeB-1),
-                     Encrypt(keyAB, (PIDa, challengeB-2, nonceB)))
+                     Encrypt(keyAB, (PIDa, challengeB-2, nonceB, key-Q-ID)))
 
 Q<--R: rpc-response((SID, nonceA), OK,
                     (Signature(key-R, challengeA-1),
-                     Encrypt(keyAB, (PIDb, challengeA-2, nonceA)))
+                     Encrypt(keyAB, (PIDb, challengeA-2, nonceA, key-R-ID)))
 ~~~
 {: #sa-init title="Secure Association with two challenge-response rounds."}
 
@@ -508,11 +585,22 @@ The fields named optionsA and optionsB are key-value data structures
 that contain the following information, at a minimum:
 
 * Preferred identity information (e.g., the form of signature algorithm to use
-    when processing the challenge and response).
+    when processing the challenge and response, list of available certificates
+    or contained KeyIds, and the type of identity required by the endpoint --
+    EPHEMERAL-IDENTITY or TRUSTED-IDENTITY).
 * Diffie Hellman group parameters
 
+If R supports the Diffie Hellman group options provided by Q in optionsA, then those
+same values will be echoed back to Q in the optionsB structure.
+
 The key key-{Q,R} is a private key of {Q,R} or a symmetric key
-shared between Q and R.
+shared between Q and R. The identifiers key-{Q,R}-ID are the corresponding key
+IDs of key-{Q,R}. Since the list of trusted certificates and KeyIds are provided
+in the initial "prove-identity" RPC request, the response must indicate which
+key was used to verify the signature. These identifiers can correspond to
+public keys or pre-shared keys: the only requirement is that, if TRUSTED-IDENTITY
+authentication is used, the recipient must be able to match the KeyId against
+their list of KeyIds.
 
 Lastly, keyAB is the key material derived from the output of the
 Diffie Hellman exchange with the shares keyshareA and keyshareB. That

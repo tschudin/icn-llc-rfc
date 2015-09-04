@@ -77,25 +77,27 @@ Table of Contents
      4.1.  RPC-request . . . . . . . . . . . . . . . . . . . . . . .   7
      4.2.  RPC-response  . . . . . . . . . . . . . . . . . . . . . .   8
      4.3.  Logical Link Traffic  . . . . . . . . . . . . . . . . . .   8
-   5.  Negotiation Tasks . . . . . . . . . . . . . . . . . . . . . .   8
-     5.1.  Session Initialization  . . . . . . . . . . . . . . . . .   9
-     5.2.  Inspection (Get MTU)  . . . . . . . . . . . . . . . . . .   9
-     5.3.  Secure Association Establishment  . . . . . . . . . . . .  10
-     5.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  12
-     5.5.  Create Logical Link (= pipe)  . . . . . . . . . . . . . .  12
-     5.6.  Destroy Logical Link (= pipe) . . . . . . . . . . . . . .  13
-     5.7.  Keep-Alive  . . . . . . . . . . . . . . . . . . . . . . .  13
-   6.  Encoding of Non-control Traffic and RPC Parameters  . . . . .  14
-     6.1.  Encoding of message type  . . . . . . . . . . . . . . . .  14
-     6.2.  Encoding of a message's fields (list encoding)  . . . . .  14
-     6.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  15
-     6.4.  Encoding Examples . . . . . . . . . . . . . . . . . . . .  15
-     6.5.  Minimum MTU, Fragmentation of LLC Messages and Message
-           Stuffing  . . . . . . . . . . . . . . . . . . . . . . . .  16
-   7.  Security Considerations . . . . . . . . . . . . . . . . . . .  16
-   8.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  17
-   9.  RPC Verbs and Configuration Name Space  . . . . . . . . . . .  17
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  17
+     4.4.  Motivating the RPC encoding . . . . . . . . . . . . . . .   8
+   5.  LLC Identities and Security . . . . . . . . . . . . . . . . .   8
+   6.  LLC Negotiation . . . . . . . . . . . . . . . . . . . . . . .  10
+     6.1.  Session Initialization  . . . . . . . . . . . . . . . . .  10
+     6.2.  Inspection (Get MTU)  . . . . . . . . . . . . . . . . . .  11
+     6.3.  Secure Association Establishment  . . . . . . . . . . . .  11
+     6.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  14
+     6.5.  Create Logical Link (= pipe)  . . . . . . . . . . . . . .  14
+     6.6.  Destroy Logical Link (= pipe) . . . . . . . . . . . . . .  15
+     6.7.  Keep-Alive  . . . . . . . . . . . . . . . . . . . . . . .  16
+   7.  Encoding of Non-control Traffic and RPC Parameters  . . . . .  16
+     7.1.  Encoding of message type  . . . . . . . . . . . . . . . .  16
+     7.2.  Encoding of a message's fields (list encoding)  . . . . .  16
+     7.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  17
+     7.4.  Encoding Examples . . . . . . . . . . . . . . . . . . . .  17
+     7.5.  Minimum MTU, Fragmentation of LLC Messages and Message
+           Stuffing  . . . . . . . . . . . . . . . . . . . . . . . .  19
+   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  19
+   9.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  19
+   10. RPC Verbs and Configuration Name Space  . . . . . . . . . . .  19
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  20
 
 1.  Introduction
 
@@ -104,8 +106,6 @@ Table of Contents
    software.  It consists of a negotiation method to explore, configure,
    and manage the essential parameters for communication, permitting to
    switch from unsecured message exchange to encrypted and authenticated
-   communications.  It also supports the dynamic creation of logical
-
 
 
 
@@ -114,6 +114,7 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 2]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
+   communications.  It also supports the dynamic creation of logical
    links on a per-protocol basis, permitting to use the link for
    multiple ICN protocols such as CCNx and NDN, in parallel.
 
@@ -161,7 +162,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    LLC's RPC approach is extensible enough in order to support a variety
    of endpoint- and application-specific link management requirements.
 
-   Scope of document:
 
 
 
@@ -169,6 +169,8 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 3]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   Scope of document:
 
    The rest of this document introduces definitions and notation used in
    the description of the ICN-LLC protocol, outlines the relevant
@@ -196,6 +198,8 @@ Internet-Draft                   ICN-LLC                     August 2015
       by a session manager in which encrypted traffic is sent between
       two endpoints.
 
+   o  secure association: A context
+
    o  RPC-request: A request to perform an RPC action from a sender to a
       receiver.
 
@@ -214,10 +218,6 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    (2) The underlying link protocol provides the most basic ability to
    frame/encapsulate and move an arbitrary (up to some maximum) sized
-   payload from one endpoint to another.  We do not assume ordered or
-   reliable datagram transfer.
-
-
 
 
 
@@ -226,15 +226,22 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 4]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-   (3) Each endpoint has a cryptographic identity and can prove its
-   identity to the other endpoints over the respective links.
+   payload from one endpoint to another.  We do not assume ordered or
+   reliable datagram transfer.  Thus, the protocol is entirely
+   transport-agnostic.
 
-   (4) To this end, endpoints are pre-configured with one or more trust
-   anchors permitting them to identity other endpoints that they trust
-   i.e., those endpoints that are allowed to participate in the
-   execution of the ICN-LLC protocol.  These identities could be
-   ascertained online (making us of the trust anchors) or be pre-
-   configured manually by system administrators.
+   (3) Each endpoint has or can generate a cryptographic identity and
+   can prove its identity to the other endpoints over the respective
+   links.
+
+   (4) Endpoints are pre-configured with one or more trust anchors
+   permitting them to identity other endpoints that they trust i.e.,
+   those endpoints that are allowed to participate in the execution of
+   the ICN-LLC protocol.  These identities could be ascertained online
+   (making us of the trust anchors) or be pre-configured manually by
+   system administrators.
+
+   (5) All LLC traffic must be protected using authenticated encryption.
 
 3.2.  Cast
 
@@ -266,13 +273,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    This client API provides access to very basic services to
    interconnect ICN peers.  In a UNIX environment, the API could be
    structured as follows (in C syntax):
-
-
-
-
-
-
-
 
 
 
@@ -350,11 +350,10 @@ Internet-Draft                   ICN-LLC                     August 2015
    session's pipes, are managed by remote procedure operations.  To this
    end, two message types "RPC-request" and "RPC-response" are needed.
    A third message type serves to recognize actual production (= non-
-   control) traffic, called "logical link traffic".
-
-   In the subsequent sections we describe these three message types and
-   their fields, as well as the INC-LLC protocol, in an encoding-neutral
-   way using prefixed lists.  For example, a packet with the fields
+   control) traffic, called "logical link traffic".  In the subsequent
+   sections we describe these three message types and their fields, as
+   well as the INC-LLC protocol, in an encoding-neutral way using
+   prefixed lists.  For example, a packet with the fields
 
      +----------------------------+
      | f1 | f2 | more fields here |
@@ -385,7 +384,8 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    (See also Figure [#llc-msgs]) An RPC-request message carries an ID
    that identifyies the request instance (RID) as well as a verb (= name
-
+   of the remote procedure) and an optional payload with the list of
+   parameters.
 
 
 
@@ -393,9 +393,6 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 7]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
-
-   of the remote procedure) and an optional payload with the list of
-   parameters.
 
    The RID carries two pieces of information: The current session's ID
    (SID) comes first, followed by a nonce.  The role of the SID is to
@@ -427,21 +424,24 @@ Internet-Draft                   ICN-LLC                     August 2015
    bidirectional interconnection of ICN clients) in which case the
    tuple's values are swapped.
 
-5.  Negotiation Tasks
+4.4.  Motivating the RPC encoding
 
-   We now describe the major negotiation tasks (RPC calls) that make up
-   the LLC protocol.
+   This RPC-based mechanism is entirely protocol- and transport-
+   agnostic, and enables each endpoint to operate without making
+   assumptions about the implementation details, e.g., nonce size,
+   session and pipe management, etc., of the other endpoint.  Link-local
+   names for control messages for all protocols (CCNx 0.8x, NDN 2013,
+   CCNx 1.0, etc.) could be adopted in lieu of these RPC messages.
+   However, this requires that each endhost understand and use the same
+   naming scheme.  Moreover, managing the link for non-ICN traffic
+   purposes (e.g., setting the MTU size), should be done independently
+   of the protocol that exchanges traffic across the link.
 
-   {XXX.cft: say something about the negotiation style: select/set
-   instead of haggle}
+5.  LLC Identities and Security
 
-   {XXX.cft: say something about the required RPC failure semantics (at-
-   least-once vs at-most-once)}
-
-   Any side can initiate a remote procedure call at any time.  It is
-   suggested to limit the number of RPCs that one side issues in
-   parallel to four (including nesting).  For simplicity, we refer to
-
+   The concept of endpoint identity is crucial to the operation and
+   execution of the LLC protocol.  Identities are used to authenticate
+   endpoints so as to establish a secure (but possibly untrusted)
 
 
 
@@ -450,10 +450,90 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 8]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-   each of the endpoints in the protocol as Q for Questioner and R for
-   Responder.
+   association.  Cryptographically, an identity is associated with some
+   keying material, e.g., a public and private key pair, or a pre-shared
+   key.  In this document, we consider two types of identities:
 
-5.1.  Session Initialization
+   1) [EPHEMERAL-IDENTITY] Ephemeral (short-term, on-demand) identities
+   that are not certified by a trust anchor.  This type of identity
+   could be backed by an ephemeral public and private key pair or a
+   symmetric key, all of which are generated at random and used for the
+   purposes of a single session.
+
+   2) [TRUSTED-IDENTITY] Long-term identities that are backed by a trust
+   anchor.  This type of identity could be represented as a certificate
+   signed by a trusted Certification Authority (CA), or a pre-shared key
+   that is was installed by a device manufacturer.
+
+   Using these two types of identities, endpoints prove their identity
+   using one of these identity types.  This ensures that, at a minimum,
+   each endpoint is communicating with another endpoint which
+   continually proves its identity by virtue of the fact that it uses
+   the appropriate cryptographic keys for LLC message encryption.  Put
+   another way, by minimally enforcing endpoint authentication using
+   ephemeral identities, each endpoint is assured that they are always
+   communicating with the endhost with whom the LLC session was
+   initiated.
+
+   Again, at a minimum, authentication based on ephemeral identities is
+   mandatory.  Each endpoint may opt for strong authentication using a
+   long-term identity.  For example, one endhost may use an ephemeral
+   identity to authenticate itself with another endpoint using a long-
+   term identity, or vice versa.  Alternatively, both endpoints may use
+   long-term identities during authentication.  These combinatorial
+   options are outlined below.
+
+   1) Both endpoints authenticate themselves with ephemeral identities.
+   This type of configuration may be suitable for two endpoints (i.e., a
+   consumer device and forwarder) which are both within a common
+   enterprise network.  2) One endpoint authenticates itself with an
+   ephemeral identity, and the other authenticates itself with a long-
+   term identity.  This type of configuration is appropriate in cases
+   where an access point should only allow trusted clients to connect
+   send traffic to the network.  In such a scenario, clients would
+   possess long-term identities that are trusted by the access point,
+   whereas the access point uses an ephemeral identity since consumers
+   need not care about its trustworthiness.  3) Both endpoints
+   authenticate themselves with long-term identities.  This type of
+   configuration may be suitable for two core routers or forwarders in
+   the public Internet.
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 9]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   Note that supporting ephemeral identities for authentication enables
+   traffic to flow freely through an endpoint.  This may be undesireable
+   in some cases (i.e., for a router in the public Internet), but may be
+   acceptable for others (i.e., a forwarder within a trusted enterprise
+   network).
+
+6.  LLC Negotiation
+
+   We now describe the negotiation procedures and tasks (RPC calls) that
+   are used in the LLC protocol.  Any side can initiate a remote
+   procedure call at any time.  It is suggested to limit the number of
+   RPCs that one side issues in parallel to four (including nesting).
+   For simplicity, we refer to each of the endpoints in the protocol as
+   Q for Questioner and R for Responder.
+
+   The negotion tasks are performed imperatively: a questioner first
+   selects the supported or provided values for a given option from the
+   responder, and then subsequently sets the value of said option using
+   one of the supported values.  Failures occur when a questioner fails
+   to use or provide a correct value for the responder (i.e., an invalid
+   MTU value is set, or an unsupported cryptographic algorithm is
+   specified).  In all cases, when failures occur, the responder replies
+   with a negative acknowledgement flag (FAIL) and lists the reason for
+   the failure.  The failure reason indicates only what option, command,
+   or parameter was invalid, and does not provide details or possible
+   remediation actions.
+
+6.1.  Session Initialization
 
    The session initialization task is the first step in establishing and
    using a link between two endpoints.  Assuming such a communication
@@ -474,6 +554,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    to this new session.  In the following we abbreviate this tuple to
    SID.
 
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 10]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    Note that session initialization leaves the two endpoints in an
    unsecure state until they have executed the secure association task
    (see below).
@@ -483,7 +571,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    revealed during the SA step, but this induces state.  If these two
    operations are separated, then some state is necessary.}
 
-5.2.  Inspection (Get MTU)
+6.2.  Inspection (Get MTU)
 
    Inspection messages may be used to recover generic information from
    an endpoint, e.g., the preferred MTU size.  The RPC exchange for an
@@ -498,14 +586,6 @@ Internet-Draft                   ICN-LLC                     August 2015
 
                   Figure 5: Remote inspection (for MTU).
 
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 9]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    Inspection messages may be used to query any well-named object from
    the recipient endpoint.  In the example above, the inspection for the
    preferred MTU would usually occur before establishing a secure
@@ -514,7 +594,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    established, all inspection messages will be encrypted like other
    link traffic.
 
-5.3.  Secure Association Establishment
+6.3.  Secure Association Establishment
 
    The secure association (SA) establishment message exchange is used to
    create a secure session over a given link.  This enables all
@@ -523,55 +603,90 @@ Internet-Draft                   ICN-LLC                     August 2015
    running on the other endpoint of a given link, and to then establish
    shared symmetric keys to perform authenticated encryption of all
    traffic that follows the exchange.  Currently, we specify a simple
-   challenge-response mutual authentication protocol.  This can be
-   replaced with any functionally equivalent protocol.
+   challenge-response authentication protocol that enables mutual
+   authentication with ephemeral identities.  This can be replaced with
+   any functionally equivalent protocol.
 
-   Note that the SA involves nested RPCs: The responder to the initial
-   RPC request will do an RPC in reverse direction in order to
+   Note that authorization is distinctly separate from SA
+   authentication, and is based on the set of trusted identities in
+   possession by each endpoint.  For example, an endpoint will
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 11]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   authenticate another endpoint requesting to establish a SA, but it
+   will not authorize the endpoint unless the identity it used to
+   authenticate itself is trusted by the receiver.  Therefore, it should
+   be clear that authorization is not possible with ephemeral
+   identities; authorization can only happen with long-term trusted
+   identities.
+
+   Also, observe that the SA involves nested RPCs: The responder to the
+   initial RPC request will do an RPC in reverse direction in order to
    authenticate the requestor.
 
-   Note also that Encrypt(K,M) stands for the ciphertext resulting from
-   applying key K to message M and Signature(K,M) for a signature of M
-   using key K.
+   Finally, for notational purposes, Encrypt(K,M) stands for the
+   ciphertext resulting from applying key K to message M and
+   Signature(K,M) for a signature of M using key K.
 
-   Q-->R: rpc-request((SID, nonceA), "prove-identity",
-                      (NIL, <optionsA>, <keyshareA>,
-                       NIL, <challengeA-1, challengeA-2>))
+Q-->R: rpc-request((SID, nonceA), "prove-identity",
+                   (NIL, <optionsA>, <keyshareA>,
+                    NIL, <challengeA-1, challengeA-2>))
 
-   Q<--R: rpc-request((SID, nonceB), "prove-identity"
-                      (nonceA, <optionsB>, <keyshareB>,
-                       NIL, <challengeB-1, challengeB-2>))
+Q<--R: rpc-request((SID, nonceB), "prove-identity"
+                   (nonceA, <optionsB>, <keyshareB>,
+                    NIL, <challengeB-1, challengeB-2>))
 
-   Q-->R: rpc-response((SID, nonceB), OK,
-                       (Signature(key-Q, challengeB-1),
-                        Encrypt(keyAB, (PIDa, challengeB-2, nonceB)))
+Q-->R: rpc-response((SID, nonceB), OK,
+                    (Signature(key-Q, challengeB-1),
+                     Encrypt(keyAB, (PIDa, challengeB-2, nonceB, key-Q-ID)))
 
-   Q<--R: rpc-response((SID, nonceA), OK,
-                       (Signature(key-R, challengeA-1),
-                        Encrypt(keyAB, (PIDb, challengeA-2, nonceA)))
+Q<--R: rpc-response((SID, nonceA), OK,
+                    (Signature(key-R, challengeA-1),
+                     Encrypt(keyAB, (PIDb, challengeA-2, nonceA, key-R-ID)))
 
      Figure 6: Secure Association with two challenge-response rounds.
 
    In the first message, the value NIL is used to represent an empty
    nonce.
 
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 10]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    The fields named optionsA and optionsB are key-value data structures
    that contain the following information, at a minimum:
 
    o  Preferred identity information (e.g., the form of signature
-      algorithm to use when processing the challenge and response).
+      algorithm to use when processing the challenge and response, list
+      of available certificates or contained KeyIds, and the type of
+      identity required by the endpoint - EPHEMERAL-IDENTITY or TRUSTED-
+      IDENTITY).
 
    o  Diffie Hellman group parameters
 
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 12]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+   If R supports the Diffie Hellman group options provided by Q in
+   optionsA, then those same values will be echoed back to Q in the
+   optionsB structure.
+
    The key key-{Q,R} is a private key of {Q,R} or a symmetric key shared
-   between Q and R.
+   between Q and R.  The identifiers key-{Q,R}-ID are the corresponding
+   key IDs of key-{Q,R}. Since the list of trusted certificates and
+   KeyIds are provided in the initial "prove-identity" RPC request, the
+   response must indicate which key was used to verify the signature.
+   These identifiers can correspond to public keys or pre-shared keys:
+   the only requirement is that, if TRUSTED-IDENTITY authentication is
+   used, the recipient must be able to match the KeyId against their
+   list of KeyIds.
 
    Lastly, keyAB is the key material derived from the output of the
    Diffie Hellman exchange with the shares keyshareA and keyshareB.
@@ -599,6 +714,22 @@ Internet-Draft                   ICN-LLC                     August 2015
    For example, the remote inspection RPC can now be executed in a
    secured fashion as follows:
 
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 13]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    Q-->R: llt-message(LIDAB, Encrypt(keyAB,
                       rpc-request((SID, nonce),
                                   "lookup", ("/conf/preferredMTU"))))
@@ -609,16 +740,7 @@ Internet-Draft                   ICN-LLC                     August 2015
 
                     Figure 7: RPC inside a local pipe.
 
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 11]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
-5.4.  Set MTU
+6.4.  Set MTU
 
    Setting the MTU is a standard message in the LLC protocol that has
    the following RPC exchange format.
@@ -635,7 +757,7 @@ On failure:
 
                           Figure 8: Set the MTU.
 
-5.5.  Create Logical Link (= pipe)
+6.5.  Create Logical Link (= pipe)
 
    After a session and SA have been established, the protocol-specific
    links (pipe) must be created.  This is done with the following
@@ -655,6 +777,15 @@ On failure:
 
                   Figure 9: Logical Link (Pipe) Creation.
 
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 14]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    This creates a new pipe whose identifier is the tuple (PID-5a, PID-
    5b).  That is, for messages send through this pipe, questioner Q will
    use the logical link ID LID5Q = (SID, (PID-5a, PID-5b)), whereas the
@@ -665,15 +796,6 @@ On failure:
    each pipe is owned and controlled by the session manager, it is
    sufficient for the session manager to simply derive and impose a new
    encryption key Key-5QR for the pipe during creation.  In other words,
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 12]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    it is not necessary to perform another multi-round Diffie Hellman key
    exchange.
 
@@ -691,7 +813,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    allowing endpoints to negotiate these parameters during the pipe
    creation exchange.
 
-5.6.  Destroy Logical Link (= pipe)
+6.6.  Destroy Logical Link (= pipe)
 
    Finally, when a pipe is finished, it must be destroyed and all state
    must be recycled.  This is done with the following exchange.
@@ -710,25 +832,24 @@ Internet-Draft                   ICN-LLC                     August 2015
    idempotent; attempting to destroy a non-existent pipe will yield an
    OK response from the recipient.
 
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 15]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    Note that the two pipes representing the logical control link, named
    (SID, PIDBA) and (SID, PIDAB) above, cannot be close.  Instead, the
    "destroy-session" RPC must be used.
 
-5.7.  Keep-Alive
+6.7.  Keep-Alive
 
    Use the NOOP call to verify that the peer session manager is still up
    and running.
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 13]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Q-->R: llt-message(LIDAB, encrypt(KeyAB,
                       rpc-request((SID, nonce), NOOP, NIL)))
@@ -736,7 +857,7 @@ Internet-Draft                   ICN-LLC                     August 2015
    Q<--R: llt-message(LIDBA, encrypt(Key-AB,
                       rpc-response((SID, nonce), OK, NIL)))
 
-6.  Encoding of Non-control Traffic and RPC Parameters
+7.  Encoding of Non-control Traffic and RPC Parameters
 
    Structurally, all three message types of ICN-LLC are identical in
    being a list of fields.  A single header byte discriminates among the
@@ -747,7 +868,7 @@ Internet-Draft                   ICN-LLC                     August 2015
      | msgtype | listEncoding ....|
      +---------+--------------//--+
 
-6.1.  Encoding of message type
+7.1.  Encoding of message type
 
    The assigned values for the one-byte-header are:
 
@@ -755,7 +876,7 @@ Internet-Draft                   ICN-LLC                     August 2015
      0x82  rpc-request
      0x83  rpc-response
 
-6.2.  Encoding of a message's fields (list encoding)
+7.2.  Encoding of a message's fields (list encoding)
 
    ICN-LLC encodes lists in a similar way as was proposed by Rivest for
    symbolic expressions [SEXPR].  The variation consists in combining
@@ -770,6 +891,13 @@ Internet-Draft                   ICN-LLC                     August 2015
    A data structure either is a list or an atom.  The general format for
    a list is:
 
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 16]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
      <list-bit=1, len-in-bytes> <element-1> ... <element-N>
 
    where an element can be either another list or an atom.
@@ -777,14 +905,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    The format for an atom is:
 
      <list-bit=0, len-in-bytes> <blob>
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 14]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Two atom types are defined (but the type is not made explicit in the
    ICN-LLC encoding): Strings are encoded without trailing zero, integer
@@ -802,7 +922,7 @@ Internet-Draft                   ICN-LLC                     August 2015
      8192..1048575  L110 llll  llll llll  llll llll
      reserved       L111 ...
 
-6.3.  Length of Identifier Fields
+7.3.  Length of Identifier Fields
 
    Although fields can vary in length and therefore, for example, a
    pipeID could consist of two 8-bit values, it is recommended to
@@ -812,9 +932,27 @@ Internet-Draft                   ICN-LLC                     August 2015
      2x2 Bytes  session ID
      2x2 Bytes  pipe ID
 
-6.4.  Encoding Examples
+7.4.  Encoding Examples
 
    a) LLT message
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 17]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
      llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 21 Bytes
 
@@ -830,17 +968,6 @@ Internet-Draft                   ICN-LLC                     August 2015
        0x03 0x61 0x62 0x63    % payload
 
    b) RPC-request (start session)
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 15]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
      rpc-request(((0x1234,0)0x73683559)"_rst"()) --> 19 Bytes
 
@@ -871,7 +998,19 @@ Internet-Draft                   ICN-LLC                     August 2015
        0x01 0x00              % OK
        0x80                   % empty param list
 
-6.5.  Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 18]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+7.5.  Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
 
    None of the three message types (LLT-message, RPC-request, RPC-
    response) may be fragmented.
@@ -885,27 +1024,18 @@ Internet-Draft                   ICN-LLC                     August 2015
    Multiple LLC messages can be combined into one frame as long as they
    fully fit into the link's MTU.
 
-7.  Security Considerations
+8.  Security Considerations
 
    yes
 
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 16]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
-8.  References
+9.  References
 
    o  S-expressions http://people.csail.mit.edu/rivest/Sexp.txt
 
    o  Network pointers
       http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps
 
-9.  RPC Verbs and Configuration Name Space
+10.  RPC Verbs and Configuration Name Space
 
    Verbs:
 
@@ -928,6 +1058,14 @@ Internet-Draft                   ICN-LLC                     August 2015
      /conf/ro/preferredMTU
      /conf/rw/MTU
 
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 19]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
 Authors' Addresses
 
    Christian Tschudin
@@ -949,4 +1087,34 @@ Authors' Addresses
 
 
 
-Tschudin & Wood           Expires March 2, 2016                [Page 17]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 20]
