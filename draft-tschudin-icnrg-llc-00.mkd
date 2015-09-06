@@ -47,13 +47,13 @@ informative:
 --- abstract
 
 This document describes an ICN logical link control (ICN-LLC) protocol to
-enable negotiation between ICN-enabled endpoints. The ICN-LLC protocol
-provides a framework in which two parties can negotiate session and
-pipe properties. For example, pipes could be configured to provide reliable and
-ordered datagram delivery, or endpoints could negotiate traffic control parameters
-on a per-session or per-pipe basis. The protocol is designed to be extensible
-so as to support a variety of endpoint- and application-specific link management
-requirements.
+establish, configure, test, and negotiate options for links between ICN-enabled
+endpoints. The ICN-LLC protocol provides a framework in which two parties can manage
+session and pipe properties, as well as encapsulate and transfer data messages belonging
+to separate ICN protocols over the same logical link. For example, pipes could be
+configured to provide reliable and ordered datagram delivery for CCNx or NDN traffic.
+The protocol is designed to be extensible so as to support a variety of endpoint-
+and application-specific link control requirements.
 
 --- middle
 
@@ -61,35 +61,29 @@ Introduction        {#problems}
 ============
 
 This document specifies a logical link control (LLC) protocol to
-establish a secure association between two endpoints running ICN
-software.  It consists of a negotiation method to explore, configure,
-and manage the essential parameters for communication, permitting to
+(1) establish a secure association between two endpoints running ICN
+software, (2) enable endpoints to control, test, and negotiate options
+for the secured link, and (3) transfer ICN protocol messages in across
+this link. In this way, it is much like the PPP (CITE) protocol.
+It consists of a mandatory secure association establishment
+procedure, a set of management and negotiation methods to explore, configure,
+and control the essential parameters for communication, permitting to
 switch from unsecured message exchange to encrypted and authenticated
-communications. It also supports the dynamic creation of logical links
+communications, and an encapsulation mechanism for ICN protocol
+message transfer. It supports the dynamic creation of logical links
 on a per-protocol basis, permitting to use the link for multiple ICN
 protocols such as CCNx and NDN, in parallel.
 
 It is assumed that two endpoints executing the ICN-LLC protocol have already
 discovered each other and configured their lower-layer transport
 mechanism to enable bidirectional communication. A single session is
-establish over this link for end-to-end control. This session is used
+established over this link for end-to-end control. This session is used
 to control, for example, the session (and in consequence also the
-ICN protocols') MTU size before encryption is turned
+ICN protocols') MTU size before mandatory encryption is turned
 on between the two endpoints. Within this session, encrypted logical
 channels, called pipes, are established both for control and for
-production traffic. Each endpoint is authenticated during this stage.
-
-<!--
-Finally, after the encrypted control channel is established, per-protocol communication
-channels, or threads, can be instantiated within the context of the link session.
--->
-<!-- A session manager is responsible for handling the control messages exchanged between
-endpoints in the context of a given session. -->
-<!--
-Threads are used to send protocol-specific traffic go a remote "packet
-handler". For example, two endpoints with an established session could
-create two separate threads for CCNx and NDN traffic. Threads are
-unidirectional but are often used in pairs (to have bidirectionality). -->
+production traffic. Each endpoint is authenticated during this stage
+using either ephemeral or long-term trusted identities.
 
 The hierarchy of control in ICN-LLC is shown below. Note that multiple pipes are used
 to encapsulate multiple instances of (possibly different) ICN protocols between
@@ -117,7 +111,8 @@ RPC-response which specifies the result of the operation, e.g., an OK
 flag or a FAIL flag with some useful error information.
 
 The goal of the ICN-LLC service is to provide a framework that enables
-two parties to negotiate session and pipe properties. For example,
+two parties to negotiate session and pipe properties and transfer
+production traffic in encrypted and encapsulated datagrams. For example,
 pipes could be configured to provide reliable and ordered datagram
 delivery, or endpoints could negotiate traffic control parameters on a
 per-session or per-pipe basis. The design of ICN-LLC's RPC approach is
@@ -159,7 +154,8 @@ The following terms are used:
   by a session manager in which encrypted traffic is sent between two
   endpoints.
 
-* secure association: A context
+* secure association: A set of shared security information (e.g., session keys)
+shared between two endpoints that is used for secure communication.
 
 * RPC-request: A request to perform an RPC action from a sender to a receiver.
 
@@ -706,7 +702,6 @@ reasons:
 Currently, each pipe will use the same encryption algorithm and parameters
 for their respective traffic. This could be changed by allowing endpoints
 to negotiate these parameters during the pipe creation exchange.
-
 
 Destroy Logical Link (= pipe)
 -------------------------------
