@@ -337,7 +337,7 @@ before explaining each of them.
   llt-message (LID, blob)
 
   RID = (SID, nonce)         # request ID
-  LID = (SID, PID)           # logical link ID
+  LID = (SID, PID, nonce)    # logical link ID
   SID = (intval1, intval2)   # session ID
   PID = (intval1, intval2)   # pipe ID
 ~~~
@@ -393,7 +393,7 @@ nonce size, session and pipe management, etc., of the other endpoint.
 Link-local names for control messages for all protocols (CCNx 0.8x, NDN 2013,
 CCNx 1.0, etc.) could be adopted in lieu of these RPC messages. However, this requires
 that each endhost understand and use the same naming scheme. Moreover,
-managing the link for non-ICN traffic purposes (e.g., setting the MTU size),
+managing the link for non-ICN traffic purposes (e.g., setting the MTU size)
 should be done independently of the protocol that exchanges traffic across the link.
 
 LLC Identities and Security
@@ -618,8 +618,8 @@ endpoint-chosen numbers PIDa and PIDb. The pipe starting from the
 side that chose the PIDa value, will use pipe ID PIDAB = (PIDa,
 PIDb) while the other side can use pipe identifier PIDBA =
 (PIDb,PIDa) to reply.  Subsequently we will refer to the respective
-logical link identifiers that result from this as LIDAB=(SID,PIDAB)
-and LIDBA=(SID,PIDBA)
+logical link identifiers that result from this as LIDAB=(SID,PIDAB,nonce)
+and LIDBA=(SID,PIDBA,nonce), where nonce is generated randomly per-message.
 
 For example, the remote inspection RPC can now be executed in a secured
 fashion as follows:
@@ -728,9 +728,6 @@ Note that the two pipes representing the logical control link, named
 (SID, PIDBA) and (SID, PIDAB) above, cannot be close. Instead, the
 "destroy-session" RPC must be used.
 
-<!-- //// I stopped editing here (cft) -->
-
-
 Keep-Alive
 ----------
 
@@ -745,6 +742,34 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 ~~~
 
+Fragmentation
+=============
+
+As a link protocol, the LLC must support fragmentation to the link MTU size.
+This is to be done using indexed, hop-by-hop fragmentation (without out-of-order
+delivery). Each llt-message and RPC message is uniquely identified by a nonce, and a fragment
+of one of these messages is indicated by that same nonce and an index. If the LLC must
+transfer a message that is larger than the link MTU in an llt-message
+or RPC message, then this message is fragmented to the appropriate MTU size.
+Each fragment is given an index identifier that is then sent along with the
+message. In other words, the LID and RID identifiers would be modified from
+
+RID = (SID, nonce)
+LID = (SID, PID, nonce)
+
+to
+
+RID = (SID, nonce, fragment ID, fragment count)
+LID = (SID, PID, nonce, fragment ID, fragment count)
+
+The receiver of a fragmented message will buffer each fragment until all have been
+received. The size of this buffer is denoted by the fragment count in the LID and RID
+identifiers. The original message is reassembled upon receipt of all fragments
+and then delivered to the appropriate handler.
+
+Also, each fragmented message buffer at the receiver is associated with a timer
+that is refreshed upon the receipt of a fragment. If this timer expires, the
+buffer is cleared and the partially received message is dropped.
 
 Encoding of Non-control Traffic and RPC Parameters
 ==================================================
@@ -817,7 +842,6 @@ for the list-bit and "l" for a bit of the length value to be encoded
   reserved       L111 ...
 ~~~
 
-
 Length of Identifier Fields
 ---------------------------
 
@@ -830,7 +854,6 @@ implement identifiers according to the following MINIMAL lengths:
   2x2 Bytes  session ID
   2x2 Bytes  pipe ID
 ~~~
-
 
 Encoding Examples
 -----------------
@@ -887,8 +910,6 @@ c) RPC-response (session ack)
     0x80                   % empty param list
 ~~~
 
-
-
 Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
 ---------------------------------------------------------------
 
@@ -899,7 +920,7 @@ However, using RPC and being subject to negotiation, peers might use
 RPC to transfer parts of a larger message for remote assembly and then
 trigger the delivery of that remote memory block.
 
-The minimum (link-level) MTU is 1280 bytes (OK?). This permits ...
+The minimum (link-level) MTU is 1280 bytes.
 
 Multiple LLC messages can be combined into one frame as long as they
 fully fit into the link's MTU.

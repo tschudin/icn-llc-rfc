@@ -15,14 +15,15 @@ Expires: March 2, 2016                                              PARC
 Abstract
 
    This document describes an ICN logical link control (ICN-LLC)
-   protocol to enable negotiation between ICN-enabled endpoints.  The
-   ICN-LLC protocol provides a framework in which two parties can
-   negotiate session and pipe properties.  For example, pipes could be
-   configured to provide reliable and ordered datagram delivery, or
-   endpoints could negotiate traffic control parameters on a per-session
-   or per-pipe basis.  The protocol is designed to be extensible so as
-   to support a variety of endpoint- and application-specific link
-   management requirements.
+   protocol to establish, configure, test, and negotiate options for
+   links between ICN-enabled endpoints.  The ICN-LLC protocol provides a
+   framework in which two parties can manage session and pipe
+   properties, as well as encapsulate and transfer data messages
+   belonging to separate ICN protocols over the same logical link.  For
+   example, pipes could be configured to provide reliable and ordered
+   datagram delivery for CCNx or NDN traffic.  The protocol is designed
+   to be extensible so as to support a variety of endpoint- and
+   application-specific link control requirements.
 
 Status of This Memo
 
@@ -49,7 +50,6 @@ Copyright Notice
    This document is subject to BCP 78 and the IETF Trust's Legal
    Provisions Relating to IETF Documents
    (http://trustee.ietf.org/license-info) in effect on the date of
-   publication of this document.  Please review these documents
 
 
 
@@ -58,6 +58,7 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 1]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
+   publication of this document.  Please review these documents
    carefully, as they describe your rights and restrictions with respect
    to this document.  Code Components extracted from this document must
    include Simplified BSD License text as described in Section 4.e of
@@ -68,44 +69,43 @@ Table of Contents
 
    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
    2.  Definitions and Notation  . . . . . . . . . . . . . . . . . .   4
-   3.  ICN-LLC Concepts  . . . . . . . . . . . . . . . . . . . . . .   4
-     3.1.  Assumptions . . . . . . . . . . . . . . . . . . . . . . .   4
+   3.  ICN-LLC Concepts  . . . . . . . . . . . . . . . . . . . . . .   5
+     3.1.  Assumptions . . . . . . . . . . . . . . . . . . . . . . .   5
      3.2.  Cast  . . . . . . . . . . . . . . . . . . . . . . . . . .   5
-     3.3.  API for Endpoint Clients  . . . . . . . . . . . . . . . .   5
+     3.3.  API for Endpoint Clients  . . . . . . . . . . . . . . . .   6
      3.4.  Client work flow  . . . . . . . . . . . . . . . . . . . .   6
    4.  Link-level RPC and Logical Link Traffic . . . . . . . . . . .   7
-     4.1.  RPC-request . . . . . . . . . . . . . . . . . . . . . . .   7
+     4.1.  RPC-request . . . . . . . . . . . . . . . . . . . . . . .   8
      4.2.  RPC-response  . . . . . . . . . . . . . . . . . . . . . .   8
      4.3.  Logical Link Traffic  . . . . . . . . . . . . . . . . . .   8
-     4.4.  Motivating the RPC encoding . . . . . . . . . . . . . . .   8
-   5.  LLC Identities and Security . . . . . . . . . . . . . . . . .   8
+     4.4.  Motivating the RPC encoding . . . . . . . . . . . . . . .   9
+   5.  LLC Identities and Security . . . . . . . . . . . . . . . . .   9
    6.  LLC Negotiation . . . . . . . . . . . . . . . . . . . . . . .  10
-     6.1.  Session Initialization  . . . . . . . . . . . . . . . . .  10
+     6.1.  Session Initialization  . . . . . . . . . . . . . . . . .  11
      6.2.  Inspection (Get MTU)  . . . . . . . . . . . . . . . . . .  11
-     6.3.  Secure Association Establishment  . . . . . . . . . . . .  11
+     6.3.  Secure Association Establishment  . . . . . . . . . . . .  12
      6.4.  Set MTU . . . . . . . . . . . . . . . . . . . . . . . . .  14
-     6.5.  Create Logical Link (= pipe)  . . . . . . . . . . . . . .  14
-     6.6.  Destroy Logical Link (= pipe) . . . . . . . . . . . . . .  15
+     6.5.  Create Logical Link (= pipe)  . . . . . . . . . . . . . .  15
+     6.6.  Destroy Logical Link (= pipe) . . . . . . . . . . . . . .  16
      6.7.  Keep-Alive  . . . . . . . . . . . . . . . . . . . . . . .  16
-   7.  Encoding of Non-control Traffic and RPC Parameters  . . . . .  16
-     7.1.  Encoding of message type  . . . . . . . . . . . . . . . .  16
-     7.2.  Encoding of a message's fields (list encoding)  . . . . .  16
-     7.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  17
-     7.4.  Encoding Examples . . . . . . . . . . . . . . . . . . . .  17
-     7.5.  Minimum MTU, Fragmentation of LLC Messages and Message
-           Stuffing  . . . . . . . . . . . . . . . . . . . . . . . .  19
-   8.  Security Considerations . . . . . . . . . . . . . . . . . . .  19
-   9.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  19
-   10. RPC Verbs and Configuration Name Space  . . . . . . . . . . .  19
-   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  20
+   7.  Fragmentation . . . . . . . . . . . . . . . . . . . . . . . .  17
+   8.  Encoding of Non-control Traffic and RPC Parameters  . . . . .  17
+     8.1.  Encoding of message type  . . . . . . . . . . . . . . . .  17
+     8.2.  Encoding of a message's fields (list encoding)  . . . . .  18
+     8.3.  Length of Identifier Fields . . . . . . . . . . . . . . .  18
+     8.4.  Encoding Examples . . . . . . . . . . . . . . . . . . . .  19
+     8.5.  Minimum MTU, Fragmentation of LLC Messages and Message
+           Stuffing  . . . . . . . . . . . . . . . . . . . . . . . .  20
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  20
+   10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  20
+   11. RPC Verbs and Configuration Name Space  . . . . . . . . . . .  20
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  21
 
 1.  Introduction
 
-   This document specifies a logical link control (LLC) protocol to
+   This document specifies a logical link control (LLC) protocol to (1)
    establish a secure association between two endpoints running ICN
-   software.  It consists of a negotiation method to explore, configure,
-   and manage the essential parameters for communication, permitting to
-   switch from unsecured message exchange to encrypted and authenticated
+   software, (2) enable endpoints to control, test, and negotiate
 
 
 
@@ -114,20 +114,29 @@ Tschudin & Wood           Expires March 2, 2016                 [Page 2]
 Internet-Draft                   ICN-LLC                     August 2015
 
 
-   communications.  It also supports the dynamic creation of logical
-   links on a per-protocol basis, permitting to use the link for
-   multiple ICN protocols such as CCNx and NDN, in parallel.
+   options for the secured link, and (3) transfer ICN protocol messages
+   in across this link.  In this way, it is much like the PPP (CITE)
+   protocol.  It consists of a mandatory secure association
+   establishment procedure, a set of management and negotiation methods
+   to explore, configure, and control the essential parameters for
+   communication, permitting to switch from unsecured message exchange
+   to encrypted and authenticated communications, and an encapsulation
+   mechanism for ICN protocol message transfer.  It supports the dynamic
+   creation of logical links on a per-protocol basis, permitting to use
+   the link for multiple ICN protocols such as CCNx and NDN, in
+   parallel.
 
    It is assumed that two endpoints executing the ICN-LLC protocol have
    already discovered each other and configured their lower-layer
    transport mechanism to enable bidirectional communication.  A single
-   session is establish over this link for end-to-end control.  This
+   session is established over this link for end-to-end control.  This
    session is used to control, for example, the session (and in
-   consequence also the ICN protocols') MTU size before encryption is
-   turned on between the two endpoints.  Within this session, encrypted
-   logical channels, called pipes, are established both for control and
-   for production traffic.  Each endpoint is authenticated during this
-   stage.
+   consequence also the ICN protocols') MTU size before mandatory
+   encryption is turned on between the two endpoints.  Within this
+   session, encrypted logical channels, called pipes, are established
+   both for control and for production traffic.  Each endpoint is
+   authenticated during this stage using either ephemeral or long-term
+   trusted identities.
 
    The hierarchy of control in ICN-LLC is shown below.  Note that
    multiple pipes are used to encapsulate multiple instances of
@@ -154,21 +163,22 @@ Internet-Draft                   ICN-LLC                     August 2015
    response which specifies the result of the operation, e.g., an OK
    flag or a FAIL flag with some useful error information.
 
-   The goal of the ICN-LLC service is to provide a framework that
-   enables two parties to negotiate session and pipe properties.  For
-   example, pipes could be configured to provide reliable and ordered
-   datagram delivery, or endpoints could negotiate traffic control
-   parameters on a per-session or per-pipe basis.  The design of ICN-
-   LLC's RPC approach is extensible enough in order to support a variety
-   of endpoint- and application-specific link management requirements.
-
-
 
 
 Tschudin & Wood           Expires March 2, 2016                 [Page 3]
 
 Internet-Draft                   ICN-LLC                     August 2015
 
+
+   The goal of the ICN-LLC service is to provide a framework that
+   enables two parties to negotiate session and pipe properties and
+   transfer production traffic in encrypted and encapsulated datagrams.
+   For example, pipes could be configured to provide reliable and
+   ordered datagram delivery, or endpoints could negotiate traffic
+   control parameters on a per-session or per-pipe basis.  The design of
+   ICN-LLC's RPC approach is extensible enough in order to support a
+   variety of endpoint- and application-specific link management
+   requirements.
 
    Scope of document:
 
@@ -198,13 +208,23 @@ Internet-Draft                   ICN-LLC                     August 2015
       by a session manager in which encrypted traffic is sent between
       two endpoints.
 
-   o  secure association: A context
+   o  secure association: A set of shared security information (e.g.,
+      session keys) shared between two endpoints that is used for secure
+      communication.
 
    o  RPC-request: A request to perform an RPC action from a sender to a
       receiver.
 
    o  RPC-response: A response to an RPC-request sent from RPC-request
       receiver to the RPC-request sender.
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 4]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
 3.  ICN-LLC Concepts
 
@@ -218,14 +238,6 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    (2) The underlying link protocol provides the most basic ability to
    frame/encapsulate and move an arbitrary (up to some maximum) sized
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 4]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    payload from one endpoint to another.  We do not assume ordered or
    reliable datagram transfer.  Thus, the protocol is entirely
    transport-agnostic.
@@ -263,6 +275,13 @@ Internet-Draft                   ICN-LLC                     August 2015
     Figure 2: Entities in ICN-LLC after secure association: all logical
            links of the session are encrypted and authenticated.
 
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 5]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
 3.3.  API for Endpoint Clients
 
    The goal of the ICN-LLC protocol and its session manager is to expose
@@ -273,14 +292,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    This client API provides access to very basic services to
    interconnect ICN peers.  In a UNIX environment, the API could be
    structured as follows (in C syntax):
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 5]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
      int icnllc_init(linkaddr *local, credentials *me, fct *notify);
      int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
@@ -309,6 +320,24 @@ Internet-Draft                   ICN-LLC                     August 2015
    router wanting to establish a secure link to a peer would be
    programmed as follows:
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 6]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    llc = icnllc_init(&myUDP, &myCredentials);
    s = icnllc_openSession(llc, &remoteUDP, &myTrustAnchor);
 
@@ -328,15 +357,6 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    A NDN router waiting for session establishment from other peers would
    issue this sequence of actions (without showing error handling):
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 6]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
       llc = icnllc_init(&myUDP, &myCredentials);
       ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
@@ -366,6 +386,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    That is, a parethesis pair is used as a notation for a list.  The
    empty list is either shown as () or NIL.
 
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 7]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    We first show the data structures corresponding to the three message
    types before explaining each of them.
 
@@ -374,7 +402,7 @@ Internet-Draft                   ICN-LLC                     August 2015
      llt-message (LID, blob)
 
      RID = (SID, nonce)         # request ID
-     LID = (SID, PID)           # logical link ID
+     LID = (SID, PID, nonce)    # logical link ID
      SID = (intval1, intval2)   # session ID
      PID = (intval1, intval2)   # pipe ID
 
@@ -386,13 +414,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    that identifyies the request instance (RID) as well as a verb (= name
    of the remote procedure) and an optional payload with the list of
    parameters.
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 7]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    The RID carries two pieces of information: The current session's ID
    (SID) comes first, followed by a nonce.  The role of the SID is to
@@ -421,6 +442,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    In fact, the (SID, PID) tuple is a "network pointer" into the other
    end's function space [NetPtrs].  The pipe ID is also a tuple, in this
    case of two numbers.  Often, pipes are used in pairs (for
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 8]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    bidirectional interconnection of ICN clients) in which case the
    tuple's values are swapped.
 
@@ -434,22 +463,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    CCNx 1.0, etc.) could be adopted in lieu of these RPC messages.
    However, this requires that each endhost understand and use the same
    naming scheme.  Moreover, managing the link for non-ICN traffic
-   purposes (e.g., setting the MTU size), should be done independently
-   of the protocol that exchanges traffic across the link.
+   purposes (e.g., setting the MTU size) should be done independently of
+   the protocol that exchanges traffic across the link.
 
 5.  LLC Identities and Security
 
    The concept of endpoint identity is crucial to the operation and
    execution of the LLC protocol.  Identities are used to authenticate
    endpoints so as to establish a secure (but possibly untrusted)
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 8]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    association.  Cryptographically, an identity is associated with some
    keying material, e.g., a public and private key pair, or a pre-shared
    key.  In this document, we consider two types of identities:
@@ -477,6 +498,14 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    Again, at a minimum, authentication based on ephemeral identities is
    mandatory.  Each endpoint may opt for strong authentication using a
+
+
+
+Tschudin & Wood           Expires March 2, 2016                 [Page 9]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    long-term identity.  For example, one endhost may use an ephemeral
    identity to authenticate itself with another endpoint using a long-
    term identity, or vice versa.  Alternatively, both endpoints may use
@@ -497,14 +526,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    authenticate themselves with long-term identities.  This type of
    configuration may be suitable for two core routers or forwarders in
    the public Internet.
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                 [Page 9]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Note that supporting ephemeral identities for authentication enables
    traffic to flow freely through an endpoint.  This may be undesireable
@@ -533,6 +554,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    or parameter was invalid, and does not provide details or possible
    remediation actions.
 
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 10]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
 6.1.  Session Initialization
 
    The session initialization task is the first step in establishing and
@@ -553,14 +582,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    consisting of SID-1 and SID-2 i.e., (SID-1, SID-2) in order to refer
    to this new session.  In the following we abbreviate this tuple to
    SID.
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 10]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Note that session initialization leaves the two endpoints in an
    unsecure state until they have executed the secure association task
@@ -589,6 +610,14 @@ Internet-Draft                   ICN-LLC                     August 2015
    Inspection messages may be used to query any well-named object from
    the recipient endpoint.  In the example above, the inspection for the
    preferred MTU would usually occur before establishing a secure
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 11]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    session association (SA).  Thus, before SA, the contents of the RPC
    request and response are unencrypted.  However, after a SA is
    established, all inspection messages will be encrypted like other
@@ -610,14 +639,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    Note that authorization is distinctly separate from SA
    authentication, and is based on the set of trusted identities in
    possession by each endpoint.  For example, an endpoint will
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 11]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    authenticate another endpoint requesting to establish a SA, but it
    will not authorize the endpoint unless the identity it used to
    authenticate itself is trusted by the receiver.  Therefore, it should
@@ -632,6 +653,26 @@ Internet-Draft                   ICN-LLC                     August 2015
    Finally, for notational purposes, Encrypt(K,M) stands for the
    ciphertext resulting from applying key K to message M and
    Signature(K,M) for a signature of M using key K.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 12]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
 Q-->R: rpc-request((SID, nonceA), "prove-identity",
                    (NIL, <optionsA>, <keyshareA>,
@@ -665,15 +706,6 @@ Q<--R: rpc-response((SID, nonceA), OK,
 
    o  Diffie Hellman group parameters
 
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 12]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    If R supports the Diffie Hellman group options provided by Q in
    optionsA, then those same values will be echoed back to Q in the
    optionsB structure.
@@ -687,6 +719,16 @@ Internet-Draft                   ICN-LLC                     August 2015
    the only requirement is that, if TRUSTED-IDENTITY authentication is
    used, the recipient must be able to match the KeyId against their
    list of KeyIds.
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 13]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
    Lastly, keyAB is the key material derived from the output of the
    Diffie Hellman exchange with the shares keyshareA and keyshareB.
@@ -708,27 +750,12 @@ Internet-Draft                   ICN-LLC                     August 2015
    side that chose the PIDa value, will use pipe ID PIDAB = (PIDa, PIDb)
    while the other side can use pipe identifier PIDBA = (PIDb,PIDa) to
    reply.  Subsequently we will refer to the respective logical link
-   identifiers that result from this as LIDAB=(SID,PIDAB) and
-   LIDBA=(SID,PIDBA)
+   identifiers that result from this as LIDAB=(SID,PIDAB,nonce) and
+   LIDBA=(SID,PIDBA,nonce), where nonce is generated randomly per-
+   message.
 
    For example, the remote inspection RPC can now be executed in a
    secured fashion as follows:
-
-
-
-
-
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 13]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
    Q-->R: llt-message(LIDAB, Encrypt(keyAB,
                       rpc-request((SID, nonce),
@@ -744,6 +771,20 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    Setting the MTU is a standard message in the LLC protocol that has
    the following RPC exchange format.
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 14]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
 Q-->R: llt-message(LIDAB, Encrypt(keyAB,
                    rpc-request((SID, nonce), "set", ("/conf/MTU", <value>))))
@@ -777,15 +818,6 @@ On failure:
 
                   Figure 9: Logical Link (Pipe) Creation.
 
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 14]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    This creates a new pipe whose identifier is the tuple (PID-5a, PID-
    5b).  That is, for messages send through this pipe, questioner Q will
    use the logical link ID LID5Q = (SID, (PID-5a, PID-5b)), whereas the
@@ -801,6 +833,15 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    The pipe creation needs a remote target, expressed in form of an
    client identifier "icn-protocol-identifier".  If the new pipe cannot
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 15]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
    be bound to such a client, the RPC may fail.  A partial list of
    failure reasons:
 
@@ -832,16 +873,6 @@ Internet-Draft                   ICN-LLC                     August 2015
    idempotent; attempting to destroy a non-existent pipe will yield an
    OK response from the recipient.
 
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 15]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
    Note that the two pipes representing the logical control link, named
    (SID, PIDBA) and (SID, PIDAB) above, cannot be close.  Instead, the
    "destroy-session" RPC must be used.
@@ -857,7 +888,48 @@ Internet-Draft                   ICN-LLC                     August 2015
    Q<--R: llt-message(LIDBA, encrypt(Key-AB,
                       rpc-response((SID, nonce), OK, NIL)))
 
-7.  Encoding of Non-control Traffic and RPC Parameters
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 16]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
+7.  Fragmentation
+
+   As a link protocol, the LLC must support fragmentation to the link
+   MTU size.  This is to be done using indexed, hop-by-hop fragmentation
+   (without out-of-order delivery).  Each llt-message and RPC message is
+   uniquely identified by a nonce, and a fragment of one of these
+   messages is indicated by that same nonce and an index.  If the LLC
+   must transfer a message that is larger than the link MTU in an llt-
+   message or RPC message, then this message is fragmented to the
+   appropriate MTU size.  Each fragment is given an index identifier
+   that is then sent along with the message.  In other words, the LID
+   and RID identifiers would be modified from
+
+   RID = (SID, nonce) LID = (SID, PID, nonce)
+
+   to
+
+   RID = (SID, nonce, fragment ID, fragment count) LID = (SID, PID,
+   nonce, fragment ID, fragment count)
+
+   The receiver of a fragmented message will buffer each fragment until
+   all have been received.  The size of this buffer is denoted by the
+   fragment count in the LID and RID identifiers.  The original message
+   is reassembled upon receipt of all fragments and then delivered to
+   the appropriate handler.
+
+   Also, each fragmented message buffer at the receiver is associated
+   with a timer that is refreshed upon the receipt of a fragment.  If
+   this timer expires, the buffer is cleared and the partially received
+   message is dropped.
+
+8.  Encoding of Non-control Traffic and RPC Parameters
 
    Structurally, all three message types of ICN-LLC are identical in
    being a list of fields.  A single header byte discriminates among the
@@ -868,15 +940,25 @@ Internet-Draft                   ICN-LLC                     August 2015
      | msgtype | listEncoding ....|
      +---------+--------------//--+
 
-7.1.  Encoding of message type
+8.1.  Encoding of message type
 
    The assigned values for the one-byte-header are:
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 17]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
      0x81  llt-message
      0x82  rpc-request
      0x83  rpc-response
 
-7.2.  Encoding of a message's fields (list encoding)
+8.2.  Encoding of a message's fields (list encoding)
 
    ICN-LLC encodes lists in a similar way as was proposed by Rivest for
    symbolic expressions [SEXPR].  The variation consists in combining
@@ -890,13 +972,6 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    A data structure either is a list or an atom.  The general format for
    a list is:
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 16]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
      <list-bit=1, len-in-bytes> <element-1> ... <element-N>
 
@@ -922,37 +997,26 @@ Internet-Draft                   ICN-LLC                     August 2015
      8192..1048575  L110 llll  llll llll  llll llll
      reserved       L111 ...
 
-7.3.  Length of Identifier Fields
+8.3.  Length of Identifier Fields
 
    Although fields can vary in length and therefore, for example, a
    pipeID could consist of two 8-bit values, it is recommended to
    implement identifiers according to the following MINIMAL lengths:
 
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 18]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
      4 Bytes    nonce
      2x2 Bytes  session ID
      2x2 Bytes  pipe ID
 
-7.4.  Encoding Examples
+8.4.  Encoding Examples
 
    a) LLT message
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 17]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
      llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --> 21 Bytes
 
@@ -985,6 +1049,23 @@ Internet-Draft                   ICN-LLC                     August 2015
 
    c) RPC-response (session ack)
 
+
+
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 19]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
+
      rpc-response(((0x1234,0x5678)0x73683559)0x00()) --> 17 Bytes
 
      0x83                     % msg type
@@ -998,19 +1079,7 @@ Internet-Draft                   ICN-LLC                     August 2015
        0x01 0x00              % OK
        0x80                   % empty param list
 
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 18]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
-
-7.5.  Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
+8.5.  Minimum MTU, Fragmentation of LLC Messages and Message Stuffing
 
    None of the three message types (LLT-message, RPC-request, RPC-
    response) may be fragmented.
@@ -1019,25 +1088,39 @@ Internet-Draft                   ICN-LLC                     August 2015
    RPC to transfer parts of a larger message for remote assembly and
    then trigger the delivery of that remote memory block.
 
-   The minimum (link-level) MTU is 1280 bytes (OK?).  This permits ...
+   The minimum (link-level) MTU is 1280 bytes.
 
    Multiple LLC messages can be combined into one frame as long as they
    fully fit into the link's MTU.
 
-8.  Security Considerations
+9.  Security Considerations
 
    yes
 
-9.  References
+10.  References
 
    o  S-expressions http://people.csail.mit.edu/rivest/Sexp.txt
 
    o  Network pointers
       http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps
 
-10.  RPC Verbs and Configuration Name Space
+11.  RPC Verbs and Configuration Name Space
 
    Verbs:
+
+
+
+
+
+
+
+
+
+
+Tschudin & Wood           Expires March 2, 2016                [Page 20]
+
+Internet-Draft                   ICN-LLC                     August 2015
+
 
      OK               byte 0x00
      FAIL             byte 0x01
@@ -1057,14 +1140,6 @@ Internet-Draft                   ICN-LLC                     August 2015
      /conf/rw/icnllc-version
      /conf/ro/preferredMTU
      /conf/rw/MTU
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 19]
-
-Internet-Draft                   ICN-LLC                     August 2015
-
 
 Authors' Addresses
 
@@ -1098,23 +1173,4 @@ Authors' Addresses
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Tschudin & Wood           Expires March 2, 2016                [Page 20]
+Tschudin & Wood           Expires March 2, 2016                [Page 21]
