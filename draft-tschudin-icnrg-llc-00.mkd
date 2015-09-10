@@ -2,7 +2,7 @@
 title: Logical Link Control for ICN Protocols
 abbrev: ICN-LLC
 docname: draft-tschudin-icnrg-llc-00
-date: 2015-08-30
+date: 2015-09-09
 category: info
 
 ipr: trust200902
@@ -46,14 +46,24 @@ informative:
 
 --- abstract
 
-This document describes an ICN logical link control (ICN-LLC) protocol to
-establish, configure, test, and negotiate options for links between ICN-enabled
-endpoints. The ICN-LLC protocol provides a framework in which two parties can manage
-session and pipe properties, as well as encapsulate and transfer data messages belonging
-to separate ICN protocols over the same logical link. For example, pipes could be
-configured to provide reliable and ordered datagram delivery for CCNx or NDN traffic.
-The protocol is designed to be extensible so as to support a variety of endpoint-
-and application-specific link control requirements.
+This document describes an ICN logical link control (ICN-LLC) protocol
+to establish, configure, test, and negotiate options for links between
+ICN-enabled endpoints. This mandatorily includes securing a link
+either through outer means (DTLS, IPsec or MacSec) or through a method
+inside this ICN-LLC framework.
+
+Inside the secure association, a data pipe abstraction is provided for
+local control as well as ICN transfer traffic. The ICN-LLC framework
+enables to manage the corresponding session and pipe properties. For
+example, transfer pipes could be configured to offer reliable and
+ordered datagram delivery for CCNx or NDN traffic, or the session
+could execute a fragmentation protocol in order to increase the MTU
+of the pipes beyond the link-imposed limit.
+
+<!-- The ICN-LLC protocol is
+designed to be extensible so as to support a variety of endpoint- and
+application-specific link control requirements.
+-->
 
 --- middle
 
@@ -66,52 +76,54 @@ software, (2) enable endpoints to control, test, and negotiate options
 for the secured link, and (3) transfer ICN protocol messages in across
 this link. In this way, it is much like the PPP (CITE) protocol.
 It consists of a mandatory secure association establishment
-procedure, a set of management and negotiation methods to explore, configure,
+procedure (if encryption is not provided by the outer link layer), a set of management and negotiation methods to explore, configure,
 and control the essential parameters for communication, permitting to
 switch from unsecured message exchange to encrypted and authenticated
-communications, and an encapsulation mechanism for ICN protocol
-message transfer. It supports the dynamic creation of logical links
+communications, and a demux mechanism for ICN protocol
+message transfer. It supports the dynamic creation of logical links (pipes)
 on a per-protocol basis, permitting to use the link for multiple ICN
-protocols such as CCNx and NDN, in parallel.
+protocols and protocol versions such as CCNx and NDN, in parallel.
 
-It is assumed that two endpoints executing the ICN-LLC protocol have already
-discovered each other and configured their lower-layer transport
-mechanism to enable bidirectional communication. A single session is
-established over this link for end-to-end control. This session is used
-to control, for example, the session (and in consequence also the
-ICN protocols') MTU size before mandatory encryption is turned
-on between the two endpoints. Within this session, encrypted logical
-channels, called pipes, are established both for control and for
-production traffic. Each endpoint is authenticated during this stage
-using either ephemeral or long-term trusted identities.
+It is assumed that two endpoints executing the ICN-LLC protocol have
+already discovered each other and configured their lower-layer
+transport mechanism to enable bidirectional communication. A single
+session is established over this link for end-to-end control. This
+session is used to control, for example, the session's (and in
+consequence also the ICN protocols') MTU size. If the underlying link
+is not secure, a secure association phase must follow where each
+endpoint is authenticated using either ephemeral or long-term trusted
+identities. Within the secured session, logical channels called pipes
+are established both for control and for production traffic.
 
-The hierarchy of control in ICN-LLC is shown below. Note that multiple pipes are used
+The hierarchy of control in ICN-LLC is shown below.
+<!--
+Note that multiple pipes are used
 to encapsulate multiple instances of (possibly different) ICN protocols between
 two endpoints, so as to enable isolation and support future versioning.
+-->
 
 ~~~
-  +-----------------------------------------------+
-  |        1 Link (bidirectional transport)       |
-  |  +-----------------------------------------+  |
-  |  |     1 Session                           |  |
-  |  |   +----------------------------------+  |  |
-  |  |   | N Pipes (= undirect. log. links) |  |  |
-  |  |   +----------------------------------+  |  |
-  |  +-----------------------------------------+  |
-  +-----------------------------------------------+
+     1 link    carries    1 session    hosts   N pipes
+                
+  bidirectional,          secure               on-demand secure
+  potentially             endpoint             logical links,
+  secured                 association          unidirectional
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
-All control (e.g., negotiation) messages follow an Remote Procedure
-Call-style (RPC) model. That is, an RPC-request has an identity for
-the parent context (session) and a unique call identifier, an action
-(verb) that identifies the action to be done as well as additional
-action-specific parameters. Each RPC-request is followed by an
-RPC-response which specifies the result of the operation, e.g., an OK
-flag or a FAIL flag with some useful error information.
+All negotiation messages follow a Remote Procedure Call style
+(RPC). RPC in this context means an Interest/Content-style protocol
+with the addition of a universal parameter marshalling method.
+
+Each instance of a remote procedure call needs a unique identifier composed
+from several elements: The identity of the parent context (session), a
+unique call id, a verb that identifies the requested remote action as
+well as action-specific parameters. Each (RPC-) request is followed by
+an (RPC-) response which specifies the result of the operation, e.g.,
+an OK flag or a FAIL flag with some useful error information.
 
 The goal of the ICN-LLC service is to provide a framework that enables
-two parties to negotiate session and pipe properties and transfer
+two parties to negotiate session and pipe properties and to transfer
 production traffic in encrypted and encapsulated datagrams. For example,
 pipes could be configured to provide reliable and ordered datagram
 delivery, or endpoints could negotiate traffic control parameters on a
@@ -139,10 +151,14 @@ Definitions and Notation
 The following terms are used:
 
 * endpoint: A (session) endpoint which is capable of supporting at
-  least one ICN protocol, for example an IP node reachable via UDP.
+  least one ICN protocol, for example an IP node reachable via UDP and
+  running an NDN forwarder.
 
 * link: A bidirectional datagram service between two endpoints (e.g.,
   UDP, Ethernet).
+
+* outer security context: the result of a security protocol executed
+  before the start of ICN-LLC e.g., DTLS, IPsec or MacSec.
 
 * session: A semi-permanent context in which (possibly encrypted)
   information is exchanged over a link between two endpoints.
@@ -189,25 +205,65 @@ payload from one endpoint to another. We do not assume ordered or
 reliable datagram transfer. Thus, the protocol is entirely
 transport-agnostic.
 
-(3) Each endpoint has or can generate a cryptographic identity and can
-prove its identity to the other endpoints over the respective links.
+(3) All ICN-LLC traffic must be protected using authenticated
+encryption. Two cases are distinguished, as shown in the following
+protocol stack configurations:
 
-(4) Endpoints are pre-configured with one or more trust
+~~~
+              client apps                        client apps
+                   |                                  |
+  +------------+---+--+              +------------+---+--+
+  | ini | ctrl | xfer |  ^         ^ | ini | ctrl | xfer |
+  | msg | msgs | msgs |  |         | | msg | msgs | msgs |
+  |     |-------------|  |    L    | |     |-------------|
+  |     |  LLC pipes  |  |    L    | |     |  LLC pipes  |
+  |     |-------------|  |    C    | |     |-------------|
+  |     | (fragment.) |  v         | |     | (fragment.) |
+  +===================+            | |     |-------------|
+  | outer security ctx|            v |     | auth, encr. |
+  +-------------------+              +===================+
+  | link: datagram srv|              | link: datagram srv|
+  +-------------------+              +-------------------+
+~~~
+
+(3a) If the underlying link comes enhanced with an "outer security
+context" i.e. it already provides security guarantees such that the
+peers are mutually authenticated and link datagrams are encrypted.  In
+this case the ICN-LLC protocol reduces to handling the controll
+traffic and creating and tearing down pipes for ICN transfer traffic.
+
+(3b) If an unauthenticated and unprotected link underlies the ICN-LLC
+message exchange, the ICN-LLC framework provides means to secure the
+link. Only thereafter it is possible to establish and manage ICN
+transfer pipes.
+
+In that case where ICN-LLC has to do the setup of a secure
+association, it is assumed that each endpoint has or can generate a
+cryptographic identity and can prove its identity to the other
+endpoints over the respective links.
+
+Moreover, endpoints have then to be pre-configured with one or more trust
 anchors permitting them to identity other endpoints that they trust
 i.e., those endpoints that are allowed to participate in the execution
 of the ICN-LLC protocol. These identities could be ascertained online
 (making us of the trust anchors) or be pre-configured manually by
 system administrators.
 
-(5) All LLC traffic must be protected using authenticated encryption.
+Note that in this case some intialization messages will be transported
+in clear until the secure association is established, or until a reset
+of the session is requested.
+
 
 Cast
 ----
 
+The ICN-LLC protocol entity exposes an API towards its clients, as is
+shown in the following diagram.
+
 ~~~
-    ^    +------+ +-----+                       +-----+ +------+
+         +------+ +-----+                       +-----+ +------+
  clients | CCNx | | NDN |                       | NDN | | CCNx |
-    v    +------+ +-----+                       +-----+ +------+
+         +------+ +-----+                       +-----+ +------+
              ^       |                             ^        ^
              |       |                             |        |
              v       v                             |        v
@@ -218,10 +274,11 @@ Cast
          | manager      | |   ...             | | manager      |
          +--------------+ +-------------------+ +--------------+
 
-         <-- endpoint --> <------- link ------> <-- endpoint -->
+         <-- endpoint --> <- (secured) link --> <-- endpoint -->
 ~~~
 {: #llc-cast title="Entities in ICN-LLC after secure association: all
 logical links of the session are encrypted and authenticated."}
+
 
 API for Endpoint Clients
 ------------------------
@@ -237,6 +294,7 @@ follows (in C syntax):
 
 ~~~
      int icnllc_init(linkaddr *local, credentials *me, fct *notify);
+     int icnllc_trustedInit(int secSock, fct *notify);
      int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
      int icnllc_deregister(int registerNr);
      int icnllc_openSession(int handler, linkaddr *peer, trustanchors *t);
@@ -261,12 +319,13 @@ identifier):
 ~~~
 
 
-Client work flow
-----------------
+Client work flow (for unsecured links)
+--------------------------------------
 
-ICN clients e.g., forwarders, will use the API as follows.
-A CCNx router wanting to establish a secure link to a peer would be
-programmed as follows:
+In case that the underlying link offers either raw and unsecured UDP, IP
+or Ethernet datagrams, ICN endnotes will use the API as follows.
+
+A CCNx router wanting to establish a secure link to a peer:
 
 ~~~
    llc = icnllc_init(&myUDP, &myCredentials);
@@ -295,9 +354,38 @@ sequence of actions (without showing error handling):
    llc = icnllc_init(&myUDP, &myCredentials);
    ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
    // ... serve pipe establishment in NDNupcall()
+   
    icnllc_deregister(ndn);
    icnllc_fini(llc);
 ~~~
+
+
+Client work flow (for secured links)
+------------------------------------
+
+If the underlying link is secured, the use of the API is simplified
+for the initiator side.
+
+An endnode wanting to create logical pipes to two different remote NFD
+processes on the same host:
+
+~~~
+   llc = icnllc_trustedInit(securedSocket, &eventCallback);
+   s = icnllc_openSession(llc, NULL, NULL);
+
+   mgmt  = icnllc_openPipe(s, "/proto/icn/ndn.2015.mgmt");
+   peer1 = icnllc_openPipe(s, "/proc/nfd/pid6225", NULL);
+   peer2 = icnllc_openPipe(s, "/proc/nfd/pid6227", NULL);
+
+   // read, write ...
+
+   // close pipes ...
+   icnllc_closeSession(s)
+   icnllc_fini(llc);
+~~~
+
+For the passive ("listening") side, the only change is from
+icnllc_init(PEERCOORDINATES, CREDENTIALS) to icnllc_trustedInit(SECURESOCK).
 
 
 
@@ -373,28 +461,40 @@ permitted verbs are limited to either "OK" or "FAIL".
 Logical Link Traffic
 --------------------
 
-Logical Link Traffic refers to the messages that travel inside a
-logical link (called pipe). This message type has two fields:
-logical link ID and payload.
+Logical Link Traffic (llt) refers to the messages that travel inside a
+pipe. This message type has two fields:
+a logical link ID (LID) and a payload.
 
 The logical link is identified by a tuple that refers to the session
-context (SID) as well as the pipe to which this message belongs
+context (SID) as well as the pipe ID to which this message belongs
 to. In fact, the (SID, PID) tuple is a "network pointer" into the
-other end's function space [NetPtrs]. The pipe ID is also a tuple,
-in this case of two numbers. Often, pipes are used in pairs (for
+other end's function space [NetPtrs]. The pipe ID (PID) itself is also a tuple,
+in this case of two integers. Often, pipes are used in pairs (for
 bidirectional interconnection of ICN clients) in which case the
-tuple's values are swapped.
+tuple's integer values are swapped.
 
 Motivating the RPC encoding
 ---------------------------
-This RPC-based mechanism is entirely protocol- and transport-agnostic, and enables each endpoint to
-operate without making assumptions about the implementation details, e.g.,
-nonce size, session and pipe management, etc., of the other endpoint.
-Link-local names for control messages for all protocols (CCNx 0.8x, NDN 2013,
-CCNx 1.0, etc.) could be adopted in lieu of these RPC messages. However, this requires
-that each endhost understand and use the same naming scheme. Moreover,
-managing the link for non-ICN traffic purposes (e.g., setting the MTU size)
-should be done independently of the protocol that exchanges traffic across the link.
+
+The RPC-based negotiation and control mechanism of ICN-LLC is entirely
+protocol- and transport-agnostic. It enables each endpoint to operate
+without making assumptions about the implementation details, e.g.,
+nonce size, session and pipe management, ICN type etc., of the other
+endpoint.
+
+The alternative to these RPC messages would be to adopt link-local
+names for control messages inside some specific ICN architecture (CCNx
+0.8x, NDN 2013, CCNx 1.0, etc.). However, this requires that each
+endhost understand and use the same ICN type and its naming
+scheme. Moreover, managing the link for non-ICN traffic purposes
+(e.g., setting the MTU size) should be done independently of the
+protocol that exchanges traffic across the link.
+
+The second contribution of the RPC mechanics is the support for
+marshalling configuration parameters and results containing complex data
+structures. ICN-LLC uses "symoblic expressions", a generic encoding of
+lists, which is detailed in the section "Encoding of a message's
+field".
 
 LLC Identities and Security
 ===========================
@@ -745,27 +845,41 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
 Fragmentation
 =============
 
-As a link protocol, the LLC must support fragmentation to the link MTU size.
-This is to be done using indexed, hop-by-hop fragmentation (without out-of-order
-delivery). Each llt-message and RPC message is uniquely identified by a nonce, and a fragment
-of one of these messages is indicated by that same nonce and an index. If the LLC must
-transfer a message that is larger than the link MTU in an llt-message
-or RPC message, then this message is fragmented to the appropriate MTU size.
-Each fragment is given an index identifier that is then sent along with the
-message. In other words, the LID and RID identifiers would be modified from
+As a link protocol, ICN-LLC must support fragmentation to the link MTU
+size. The used fragmentarion method is runtime-configurable and is
+subject to ICN-LLC's negotiation methodology. Currently two
+(hop-by-hop) fragmentation schemas are envisaged: indexed
+fragmentation and Begin/End fragmentation.
 
-RID = (SID, nonce)
-LID = (SID, PID, nonce)
 
-to
+Indexed fragmentation
+---------------------
 
-RID = (SID, nonce, fragment ID, fragment count)
-LID = (SID, PID, nonce, fragment ID, fragment count)
+In indexed fragmentation (without out-of-order delivery), all
+fragments of a given llt-message and RPC message share a unique
+nonce. We either reuse an RPC's nonce, or create a special nonce for
+llt messages. Moreover, fragments carry an index number specifying at
+the order in which the carried bytes must be reassembled to yield the
+original message, and the number of fragments for the given message.
 
-The receiver of a fragmented message will buffer each fragment until all have been
-received. The size of this buffer is denoted by the fragment count in the LID and RID
-identifiers. The original message is reassembled upon receipt of all fragments
-and then delivered to the appropriate handler.
+The fragments for LLC's three packet types look as follows:
+
+~~~
+  RPC-request((SID, nonce) ...) -->
+    RPC-request-frag((SID, nonce, ndx, cnt), part-of-orig-message)
+
+  RPC-response((SID, nonce) ...) -->
+    RPC-response-frag((SID, nonce, ndx, cnt), part-of-orig-message)
+
+  llt-message((SID, PID, ...) -->
+    llt-message-frag(SID, PID, frag-nonce, ndx, cnt, part-of-orig-msg)
+~~~
+
+The receiver of a fragmented message will buffer each fragment until
+all have been received. The size of this buffer is denoted by the
+fragment count in the LID and RID identifiers. The original message is
+reassembled upon receipt of all fragments and then delivered to the
+appropriate handler.
 
 Also, each fragmented message buffer at the receiver is associated with a timer
 that is refreshed upon the receipt of a fragment. If this timer expires, the
