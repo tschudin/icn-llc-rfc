@@ -572,7 +572,7 @@ for the underlying transport protocol is established, it is done by
 the following RPC exchange.
 
 ~~~
-Q-->R: rpc-request((SID-1,0), nonce), START-SESSION, ())
+Q-->R: rpc-request((SID-1,0), nonce), CREATE-SESSION, ())
 
 On success:
   Q<--R: rpc-response((SID-1,0), nonce), OK, list(SID-2))
