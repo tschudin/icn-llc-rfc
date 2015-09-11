@@ -486,7 +486,7 @@ permitted verbs are limited to either "OK" or "FAIL".
 Logical Link Traffic
 --------------------
 
-Logical Link Traffic (llt) refers to the messages that travel inside a
+Logical Link Traffic (LLT) refers to the messages that travel inside a
 pipe. This message type has two fields:
 a logical link ID (LID) and a payload.
 
@@ -498,7 +498,7 @@ in this case of two integers. Often, pipes are used in pairs (for
 bidirectional interconnection of ICN clients) in which case the
 tuple's integer values are swapped.
 
-Llt messages whose LID cannot be matched with internal data structures
+LLT messages whose LID cannot be matched with internal data structures
 MUST be silently discarded.
 
 
@@ -845,9 +845,15 @@ yet.
 
 ## Link Maintenance
 
-Link maintenance is composed of the tasks needed to detect failures and recover.
-Currently, this is done with periodic heartbeat or keep-alive messages sent
-from both endpoints for a specific link.
+Link maintenance is composed of the tasks needed to detect failures, recover from failures or end an association.
+
+Currently,
+
+* failure detection is done with periodic heartbeat or keep-alive messages sent from both endpoints for a specific link,
+
+* there are no recovering methods defined, except starting from scratch with the link initialization phase.
+
+The dissociation task serves to tear down a session.
 
 ### Keep-Alive
 
@@ -864,7 +870,7 @@ Q<--R: llt-message(LIDBA, Encrypt(Key-AB,
 
 ### Dissociation
 
-Once a session is not needed anymore, it must be teared down. In
+Once a session is not needed anymore, it SHOULD be teared down. In
 analogy to the teardown method for pipes, this is a unilateral action
 and always succeeds (even if no session was established beforehand).
 
@@ -965,8 +971,8 @@ fragmentation and Begin/End fragmentation.
 ### Indexed fragmentation
 
 In indexed fragmentation (without out-of-order delivery), all
-fragments for a given llt-message and RPC message share a unique
-nonce. In case of RPC messages, we reuse an RPC's nonce: llt messages
+fragments for a given LLT or RPC message share a unique
+nonce. In case of RPC messages, we reuse an RPC's nonce while LLT messages
 receive their own nonce. In both cases, fragments carry an index
 number specifying the order in which the carried bytes must be
 reassembled to yield the original message, and the number of fragments
@@ -1175,14 +1181,14 @@ Verbs:
 ~~~
   OK               byte 0x00
   FAIL             byte 0x01
-  START-SESSION    "_rst"    , or "HELO" ....
+  CREATE-SESSION   "_ini"    , or "HELO", or "/builtin/create-session" or ....
   END-SESSION      "_fin"
   LOOKUP           "_get"
   CONFIGURE        "_set"
   NOOP             "_nop"
-  PROVE-IDENTITY
-  PIPE-CREATE
-  PIPE-DESTROY
+  PROVE-IDENTITY   "_prv"
+  CREATE-PIPE      "_pii"
+  DESTROY-PIPE     "_pif"
 ~~~
 
 Constants and "state registers" (MIB):

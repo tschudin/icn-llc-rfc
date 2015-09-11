@@ -743,9 +743,9 @@
 <p id="rfc.section.4.2.p.1">An RPC-response is always the reaction to a received RPC-request that was successfully parsed. Requests with unknown session ID or verb MUST be silently discarded.</p>
 <p id="rfc.section.4.2.p.2">The response contains a copy of the request&#8217;s RID so that the requestor can correlate the answer with the pending request. Furthermore, the RPC-response has a verb similar to the RPC-request. However, the permitted verbs are limited to either &#8220;OK&#8221; or &#8220;FAIL&#8221;.</p>
 <h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> <a href="#logical-link-traffic" id="logical-link-traffic">Logical Link Traffic</a></h1>
-<p id="rfc.section.4.3.p.1">Logical Link Traffic (llt) refers to the messages that travel inside a pipe. This message type has two fields: a logical link ID (LID) and a payload.</p>
+<p id="rfc.section.4.3.p.1">Logical Link Traffic (LLT) refers to the messages that travel inside a pipe. This message type has two fields: a logical link ID (LID) and a payload.</p>
 <p id="rfc.section.4.3.p.2">The logical link is identified by a tuple that refers to the session context (SID) as well as the pipe ID to which this message belongs to. In fact, the (SID, PID) tuple is a &#8220;network pointer&#8221; into the other end&#8217;s function space [NetPtrs]. The pipe ID (PID) itself is also a tuple, in this case of two integers. Often, pipes are used in pairs (for bidirectional interconnection of ICN clients) in which case the tuple&#8217;s integer values are swapped.</p>
-<p id="rfc.section.4.3.p.3">Llt messages whose LID cannot be matched with internal data structures MUST be silently discarded.</p>
+<p id="rfc.section.4.3.p.3">LLT messages whose LID cannot be matched with internal data structures MUST be silently discarded.</p>
 <h1 id="rfc.section.5"><a href="#rfc.section.5">5.</a> <a href="#llc-identities-and-security" id="llc-identities-and-security">LLC Identities and Security</a></h1>
 <p id="rfc.section.5.p.1">The concept of endpoint identity is crucial to the operation and execution of the LLC protocol. Identities are used to authenticate endpoints so as to establish a secure (but possibly untrusted) association. Cryptographically, an identity is associated with some keying material, e.g., a public and private key pair, or a pre-shared key. In this document, we consider two types of identities:</p>
 <p id="rfc.section.5.p.2">1) [EPHEMERAL-IDENTITY] Ephemeral (short-term, on-demand) identities that are not certified by a trust anchor. This type of identity could be backed by an ephemeral public and private key pair or a symmetric key, all of which are generated at random and used for the purposes of a single session.</p>
@@ -905,7 +905,15 @@ On failure:
 <p class="figure">Figure 10: Set the fragmentation options.</p>
 <p id="rfc.section.6.2.2.p.2">The responder must be carefull to not reply with a message length beyond the current MTU, in case fragmentation has not been activted yet.</p>
 <h1 id="rfc.section.6.3"><a href="#rfc.section.6.3">6.3.</a> <a href="#link-maintenance" id="link-maintenance">Link Maintenance</a></h1>
-<p id="rfc.section.6.3.p.1">Link maintenance is composed of the tasks needed to detect failures and recover.  Currently, this is done with periodic heartbeat or keep-alive messages sent from both endpoints for a specific link.</p>
+<p id="rfc.section.6.3.p.1">Link maintenance is composed of the tasks needed to detect failures, recover from failures or end an association.</p>
+<p id="rfc.section.6.3.p.2">Currently,</p>
+<p/>
+
+<ul>
+  <li>failure detection is done with periodic heartbeat or keep-alive messages sent from both endpoints for a specific link,</li>
+  <li>there are no recovering methods defined, except starting from scratch with the link initialization phase.</li>
+</ul>
+<p id="rfc.section.6.3.p.4">The dissociation task serves to tear down a session.</p>
 <h1 id="rfc.section.6.3.1"><a href="#rfc.section.6.3.1">6.3.1.</a> <a href="#keep-alive" id="keep-alive">Keep-Alive</a></h1>
 <p id="rfc.section.6.3.1.p.1">Use the NOOP call to verify that the peer session manager is still up and running.</p>
 <pre>
@@ -916,7 +924,7 @@ Q&lt;--R: llt-message(LIDBA, Encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 </pre>
 <h1 id="rfc.section.6.3.2"><a href="#rfc.section.6.3.2">6.3.2.</a> <a href="#dissociation" id="dissociation">Dissociation</a></h1>
-<p id="rfc.section.6.3.2.p.1">Once a session is not needed anymore, it must be teared down. In analogy to the teardown method for pipes, this is a unilateral action and always succeeds (even if no session was established beforehand).</p>
+<p id="rfc.section.6.3.2.p.1">Once a session is not needed anymore, it SHOULD be teared down. In analogy to the teardown method for pipes, this is a unilateral action and always succeeds (even if no session was established beforehand).</p>
 <pre>
 Q--&gt;R: llt-message(LIDAB, Encrypt(KeyAB,
            rpc-request((SID, nonce), DESTROY-SESSION, (&lt;reason&gt;))))
@@ -970,7 +978,7 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
 <h1 id="rfc.section.6.5"><a href="#rfc.section.6.5">6.5.</a> <a href="#fragmentation" id="fragmentation">Fragmentation</a></h1>
 <p id="rfc.section.6.5.p.1">As a link protocol, ICN-LLC must support fragmentation to the link MTU size. The used fragmentarion method is runtime-configurable and is subject to ICN-LLC&#8217;s negotiation methodology. Currently two (hop-by-hop) fragmentation schemas are envisaged: indexed fragmentation and Begin/End fragmentation.</p>
 <h1 id="rfc.section.6.5.1"><a href="#rfc.section.6.5.1">6.5.1.</a> <a href="#indexed-fragmentation" id="indexed-fragmentation">Indexed fragmentation</a></h1>
-<p id="rfc.section.6.5.1.p.1">In indexed fragmentation (without out-of-order delivery), all fragments for a given llt-message and RPC message share a unique nonce. In case of RPC messages, we reuse an RPC&#8217;s nonce: llt messages receive their own nonce. In both cases, fragments carry an index number specifying the order in which the carried bytes must be reassembled to yield the original message, and the number of fragments needed for the original message.</p>
+<p id="rfc.section.6.5.1.p.1">In indexed fragmentation (without out-of-order delivery), all fragments for a given LLT or RPC message share a unique nonce. In case of RPC messages, we reuse an RPC&#8217;s nonce while LLT messages receive their own nonce. In both cases, fragments carry an index number specifying the order in which the carried bytes must be reassembled to yield the original message, and the number of fragments needed for the original message.</p>
 <p id="rfc.section.6.5.1.p.2">The fragments for LLC&#8217;s three packet types look as follows:</p>
 <pre>
 RPC-request((SID, nonce) ...) --&gt;
@@ -1096,14 +1104,14 @@ llt-message((SID, PID, ...) --&gt;
 <pre>
   OK               byte 0x00
   FAIL             byte 0x01
-  START-SESSION    "_rst"    , or "HELO" ....
+  CREATE-SESSION   "_ini"    , or "HELO", or "/builtin/create-session" or ....
   END-SESSION      "_fin"
   LOOKUP           "_get"
   CONFIGURE        "_set"
   NOOP             "_nop"
-  PROVE-IDENTITY
-  PIPE-CREATE
-  PIPE-DESTROY
+  PROVE-IDENTITY   "_prv"
+  CREATE-PIPE      "_pii"
+  DESTROY-PIPE     "_pif"
 </pre>
 <p id="rfc.section.10.p.2">Constants and &#8220;state registers&#8221; (MIB):</p>
 <pre>
