@@ -48,11 +48,12 @@ informative:
 
 This document describes an ICN logical link control (ICN-LLC) protocol
 to establish, configure, test, and negotiate options for links between
-ICN-enabled endpoints. This mandatorily includes securing a given link
-either through outer means (DTLS, IPsec or MacSec) or through a method
-inside this ICN-LLC framework.
-
-Inside the secure association, a data pipe abstraction is provided for
+point-to-point ICN-enabled endpoints. ICN-LLC is analogous to PPP in that it
+provides the functionality of link control and network protocol configuration
+together. However, it includes a mandatory step of securing a given link
+either through outer means (DTLS, IPsec, or MacSec) or through a native
+method inside this ICN-LLC framework. Inside the secure association, a data
+pipe abstraction is provided for
 local control as well as ICN transfer traffic. The ICN-LLC framework
 enables to manage the corresponding session and pipe properties. For
 example, transfer pipes could be configured to offer reliable and
@@ -182,6 +183,16 @@ ICN-LLC Concepts
 
 Assumptions
 -----------
+
+Logically, the ICN-LLC protocol is analogous to PPP in that it provides the
+functionality of link control and higher-level network protocol (e.g., NDN, CCNx)
+configuration together. It is comprosed of the following procedures:
+
+- Link Creation (session initialization, inspection, SA inititialization)
+- Link Negotiation (get/set MTU and other options or features, such as fragmentation)
+- Link Management (keep-alive, destroy session, and reset session)
+- Protocol Configuration (create and destroy pipes or logical links)
+
 The ICN-LLC protocol makes the following assumptions:
 
 (1) The communication parameters necessary to communicate over a link are
@@ -213,7 +224,7 @@ protocol stack configurations:
   +-------------------+              +===================+
   | link: datagram srv|              | link: datagram srv|
   +-------------------+              +-------------------+
-  
+
  3a) outer security context      3b) security part of ICN-LLC
 ~~~
 
@@ -316,7 +327,7 @@ Client work flow (for unsecured links)
 In case that the underlying link offers either raw and unsecured UDP, IP
 or Ethernet datagrams, ICN endnotes will use the API as follows.
 
-A CCNx router wanting to establish a secure link to a peer:
+Scenario: A CCNx router wanting to establish a secure link to a peer:
 
 ~~~
    llc = icnllc_init(&myUDP, &myCredentials);
@@ -337,15 +348,14 @@ A CCNx router wanting to establish a secure link to a peer:
    icnllc_fini(llc);
 ~~~
 
-A NDN router
-waiting for session establishment from other peers would issue this
-sequence of actions (without showing error handling):
+Scenario: A NDN router waiting for session establishment from other peers would
+issue this sequence of actions (without showing error handling):
 
 ~~~
    llc = icnllc_init(&myUDP, &myCredentials);
    ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
    // ... serve pipe establishment in NDNupcall()
-   
+
    icnllc_deregister(ndn);
    icnllc_fini(llc);
 ~~~
@@ -355,10 +365,10 @@ Client work flow (for secured links)
 ------------------------------------
 
 If the underlying link is secured, the use of the API is simplified
-for the initiator side.
+for the initiator side since no SA establishment must take place.
 
-An endnode wanting to create logical pipes to two different remote NFD
-processes on the same host:
+Scenario: An endnode wanting to create logical pipes to two different remote
+NFD processes on the same host:
 
 ~~~
    llc = icnllc_trustedInit(securedSocket, &eventCallback);
@@ -377,8 +387,6 @@ processes on the same host:
 
 For the passive ("listening") side, the only change is from
 icnllc_init(PEERCOORDINATES, CREDENTIALS) to icnllc_trustedInit(SECURESOCK).
-
-
 
 Link-level RPC and Logical Link Traffic
 =======================================
@@ -541,29 +549,22 @@ to flow freely through an endpoint. This may be undesireable in some cases (i.e.
 for a router in the public Internet), but may be acceptable for others (i.e.,
 a forwarder within a trusted enterprise network).
 
-LLC Negotiation
-===============
+LLC Protocol Mechanics
+======================
 
-We now describe the negotiation procedures and tasks (RPC calls) that are used
+We now describe the procedures and tasks (RPC calls) that are used
 in the LLC protocol. Any side can initiate a remote procedure call at any time.
 It is suggested to limit the number of RPCs that one side issues in parallel
 to four (including nesting). For simplicity, we refer to each of the
 endpoints in the protocol as Q for Questioner and R for Responder.
 
-The negotion tasks are performed imperatively: a questioner first selects
-the supported or provided values for a given option from
-the responder, and then subsequently sets the value of said option
-using one of the supported values. Failures occur when a questioner
-fails to use or provide a correct value for the responder (i.e.,
-an invalid MTU value is set, or an unsupported cryptographic algorithm
-is specified). In all cases, when failures occur, the responder
-replies with a negative acknowledgement flag (FAIL) and lists
-the reason for the failure. The failure reason indicates only
-what option, command, or parameter was invalid, and does not provide
-details or possible remediation actions.
+## Link Creation
 
-Session Initialization
-----------------------
+Link creation is composed of session initialization, MTU discovery, and
+SA establishment. All tasks following creation are related to negotiation and
+management, and will be described later.
+
+### Session Initialization
 
 The session initialization task is the first step in establishing and
 using a link between two endpoints. Assuming such a communication link
@@ -594,8 +595,7 @@ such "reset" messages?}
 during the SA step, but this induces state. If these two operations
 are separated, then some state is necessary.}
 
-Inspection (Get MTU)
---------------------
+### Inspection (Get MTU)
 
 Inspection messages may be used to recover generic information
 from an endpoint, e.g., the preferred MTU size. The RPC exchange
@@ -618,8 +618,7 @@ association (SA).  Thus, before SA, the contents of the RPC request
 and response are unencrypted.  However, after a SA is established, all
 inspection messages will be encrypted like other link traffic.
 
-Secure Association Establishment
---------------------------------
+### Secure Association Establishment
 
 The secure association (SA) establishment message exchange is used to
 create a secure session over a given link. This enables all subsequent
@@ -726,12 +725,25 @@ Q<--R: llt-message(LIDBA, Encrypt(keyAB,
 ~~~
 {: #secure-inspection title="RPC inside a local pipe."}
 
+## Link Negotiation
 
-Set MTU
--------
+The negotiation tasks are performed imperatively: a questioner first selects
+the supported or provided values for a given option from
+the responder, and then subsequently sets the value of said option
+using one of the supported values. Failures occur when a questioner
+fails to use or provide a correct value for the responder (i.e.,
+an invalid MTU value is set, or an unsupported cryptographic algorithm
+is specified). In all cases, when failures occur, the responder
+replies with a negative acknowledgement flag (FAIL) and lists
+the reason for the failure. The failure reason indicates only
+what option, command, or parameter was invalid, and does not provide
+details or possible remediation actions.
+
+### Set MTU
 
 Setting the MTU is a standard message in the LLC protocol that has
-the following RPC exchange format.
+the following RPC exchange format. (We assume the MTU was already acquired
+from the prior inquiry performed in the link creation step of the protocol.)
 
 ~~~
 Q-->R: llt-message(LIDAB, Encrypt(keyAB,
@@ -746,9 +758,79 @@ On failure:
 ~~~
 {: #set-mtu-msg title="Set the MTU."}
 
+### Configure Fragmentation Mode
 
-Create Logical Link (= pipe)
-----------------------------
+Fragmentation is a necessary part of a link protocol. A questioner will
+lookup the supported fragmentation options and then subsequently ask to configure
+them, as shown below.
+
+~~~
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "get", ("/conf/frag"))))
+
+Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                    rpc-response((SID, nonce), OK, (<frag-mode-list>, <frag-size-list>))))
+~~~
+{: #get-frag-msg title="Get the fragmentation options."}
+
+~~~
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "set", ("/conf/frag", <frag-mode>, <frag-size>))))
+
+On success:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (<frag-mode>, <frag-size>))))
+On failure:
+  Q<--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (<reason>))))
+~~~
+{: #set-frag-msg title="Set the fragmentation options."}
+
+## Link Maintenance
+
+Link maintenance is composed of the tasks needed to detect failures and recover.
+Currently, this is done with periodic heartbeat or keep-alive messages sent
+from both endpoints for a specific link.
+
+### Keep-Alive
+
+Use the NOOP call to verify that the peer session manager is still up
+and running.
+
+~~~
+Q-->R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), NOOP, NIL)))
+
+Q<--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
+~~~
+
+### Link Reset
+
+If the link (not pipe) needs to be reset, the issuer of the request must
+send this message in cleartext (e.g., in case the session keys are lost).
+This is a simple reset exchange that succeeds only if the recipient agrees
+to reset the link and destroy all session state. A responder should only agree
+to this step if they have not received any traffic from the link over a specific
+period of time (to avoid malicious reset attempts).
+
+~~~
+Q-->R: rpc-request(SID, nonce), RESET, NIL)
+
+On success:
+  Q<--R: rpc-response((SID, nonce), OK)
+On failure:
+  Q<--R: rpc-response((SID, nonce), FAIL, (<reason>))
+~~~
+
+## Protocol Configuration
+
+With a secured session established, and link features negotiated, both endpoints
+can then begin constructing and managing logical links (pipes) for ICN traffic.
+We currently describe the mechanisms to create and destroy these links. Other
+features can be added as needed using the same model.
+
+### Create Logical Link (= pipe)
 
 After a session and SA have been established, the protocol-specific
 links (pipe) must be created. This is done with the following
@@ -794,8 +876,7 @@ Currently, each pipe will use the same encryption algorithm and parameters
 for their respective traffic. This could be changed by allowing endpoints
 to negotiate these parameters during the pipe creation exchange.
 
-Destroy Logical Link (= pipe)
--------------------------------
+### Destroy Logical Link (= pipe)
 
 Finally, when a pipe is finished, it must be destroyed and all state
 must be recycled. This is done with the following exchange.
@@ -819,22 +900,7 @@ Note that the two pipes representing the logical control link, named
 (SID, PIDBA) and (SID, PIDAB) above, cannot be close. Instead, the
 "destroy-session" RPC must be used.
 
-Keep-Alive
-----------
-
-Use the NOOP call to verify that the peer session manager is still up
-and running.
-
-~~~
-Q-->R: llt-message(LIDAB, encrypt(KeyAB,
-                   rpc-request((SID, nonce), NOOP, NIL)))
-
-Q<--R: llt-message(LIDBA, encrypt(Key-AB,
-                   rpc-response((SID, nonce), OK, NIL)))
-~~~
-
-Fragmentation
-=============
+## Fragmentation
 
 As a link protocol, ICN-LLC must support fragmentation to the link MTU
 size. The used fragmentarion method is runtime-configurable and is
@@ -842,9 +908,7 @@ subject to ICN-LLC's negotiation methodology. Currently two
 (hop-by-hop) fragmentation schemas are envisaged: indexed
 fragmentation and Begin/End fragmentation.
 
-
-Indexed fragmentation
----------------------
+### Indexed fragmentation
 
 In indexed fragmentation (without out-of-order delivery), all
 fragments of a given llt-message and RPC message share a unique

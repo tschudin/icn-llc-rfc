@@ -388,25 +388,31 @@
 <link href="#rfc.section.4.3" rel="Chapter" title="4.3 Logical Link Traffic"/>
 <link href="#rfc.section.4.4" rel="Chapter" title="4.4 Motivating the RPC encoding"/>
 <link href="#rfc.section.5" rel="Chapter" title="5 LLC Identities and Security"/>
-<link href="#rfc.section.6" rel="Chapter" title="6 LLC Negotiation"/>
-<link href="#rfc.section.6.1" rel="Chapter" title="6.1 Session Initialization"/>
-<link href="#rfc.section.6.2" rel="Chapter" title="6.2 Inspection (Get MTU)"/>
-<link href="#rfc.section.6.3" rel="Chapter" title="6.3 Secure Association Establishment"/>
-<link href="#rfc.section.6.4" rel="Chapter" title="6.4 Set MTU"/>
-<link href="#rfc.section.6.5" rel="Chapter" title="6.5 Create Logical Link (= pipe)"/>
-<link href="#rfc.section.6.6" rel="Chapter" title="6.6 Destroy Logical Link (= pipe)"/>
-<link href="#rfc.section.6.7" rel="Chapter" title="6.7 Keep-Alive"/>
-<link href="#rfc.section.7" rel="Chapter" title="7 Fragmentation"/>
-<link href="#rfc.section.7.1" rel="Chapter" title="7.1 Indexed fragmentation"/>
-<link href="#rfc.section.8" rel="Chapter" title="8 Encoding of Non-control Traffic and RPC Parameters"/>
-<link href="#rfc.section.8.1" rel="Chapter" title="8.1 Encoding of message type"/>
-<link href="#rfc.section.8.2" rel="Chapter" title="8.2 Encoding of a message&#x2019;s fields (list encoding)"/>
-<link href="#rfc.section.8.3" rel="Chapter" title="8.3 Length of Identifier Fields"/>
-<link href="#rfc.section.8.4" rel="Chapter" title="8.4 Encoding Examples"/>
-<link href="#rfc.section.8.5" rel="Chapter" title="8.5 Minimum MTU, Fragmentation of LLC Messages and Message Stuffing"/>
-<link href="#rfc.section.9" rel="Chapter" title="9 Security Considerations"/>
-<link href="#rfc.section.10" rel="Chapter" title="10 References"/>
-<link href="#rfc.section.11" rel="Chapter" title="11 RPC Verbs and Configuration Name Space"/>
+<link href="#rfc.section.6" rel="Chapter" title="6 LLC Protocol Mechanics"/>
+<link href="#rfc.section.6.1" rel="Chapter" title="6.1 Link Creation"/>
+<link href="#rfc.section.6.1.1" rel="Chapter" title="6.1.1 Session Initialization"/>
+<link href="#rfc.section.6.1.2" rel="Chapter" title="6.1.2 Inspection (Get MTU)"/>
+<link href="#rfc.section.6.1.3" rel="Chapter" title="6.1.3 Secure Association Establishment"/>
+<link href="#rfc.section.6.2" rel="Chapter" title="6.2 Link Negotiation"/>
+<link href="#rfc.section.6.2.1" rel="Chapter" title="6.2.1 Set MTU"/>
+<link href="#rfc.section.6.2.2" rel="Chapter" title="6.2.2 Configure Fragmentation Mode"/>
+<link href="#rfc.section.6.3" rel="Chapter" title="6.3 Link Maintenance"/>
+<link href="#rfc.section.6.3.1" rel="Chapter" title="6.3.1 Keep-Alive"/>
+<link href="#rfc.section.6.3.2" rel="Chapter" title="6.3.2 Link Reset"/>
+<link href="#rfc.section.6.4" rel="Chapter" title="6.4 Protocol Configuration"/>
+<link href="#rfc.section.6.4.1" rel="Chapter" title="6.4.1 Create Logical Link (= pipe)"/>
+<link href="#rfc.section.6.4.2" rel="Chapter" title="6.4.2 Destroy Logical Link (= pipe)"/>
+<link href="#rfc.section.6.5" rel="Chapter" title="6.5 Fragmentation"/>
+<link href="#rfc.section.6.5.1" rel="Chapter" title="6.5.1 Indexed fragmentation"/>
+<link href="#rfc.section.7" rel="Chapter" title="7 Encoding of Non-control Traffic and RPC Parameters"/>
+<link href="#rfc.section.7.1" rel="Chapter" title="7.1 Encoding of message type"/>
+<link href="#rfc.section.7.2" rel="Chapter" title="7.2 Encoding of a message&#x2019;s fields (list encoding)"/>
+<link href="#rfc.section.7.3" rel="Chapter" title="7.3 Length of Identifier Fields"/>
+<link href="#rfc.section.7.4" rel="Chapter" title="7.4 Encoding Examples"/>
+<link href="#rfc.section.7.5" rel="Chapter" title="7.5 Minimum MTU, Fragmentation of LLC Messages and Message Stuffing"/>
+<link href="#rfc.section.8" rel="Chapter" title="8 Security Considerations"/>
+<link href="#rfc.section.9" rel="Chapter" title="9 References"/>
+<link href="#rfc.section.10" rel="Chapter" title="10 RPC Verbs and Configuration Name Space"/>
 <link href="#rfc.authors" rel="Chapter"/>
 
 
@@ -416,8 +422,8 @@
   <meta name="dct.creator" content="Tschudin, C. and C. Wood" />
   <meta name="dct.identifier" content="urn:ietf:id:draft-tschudin-icnrg-llc-00" />
   <meta name="dct.issued" scheme="ISO8601" content="2015-9-09" />
-  <meta name="dct.abstract" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework." />
-  <meta name="description" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework." />
+  <meta name="dct.abstract" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between point-to-point ICN-enabled endpoints. ICN-LLC is analogous to PPP in that it provides the functionality of link control and network protocol configuration together. However, it includes a mandatory step of securing a given link either through outer means (DTLS, IPsec, or MacSec) or through a native method inside this ICN-LLC framework. Inside the secure association, a data pipe abstraction is provided for local control as well as ICN transfer traffic. The ICN-LLC framework enables to manage the corresponding session and pipe properties. For example, transfer pipes could be configured to offer reliable and ordered datagram delivery for CCNx or NDN traffic, or the session could execute a fragmentation protocol in order to increase the MTU of the pipes beyond the link-imposed limit." />
+  <meta name="description" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between point-to-point ICN-enabled endpoints. ICN-LLC is analogous to PPP in that it provides the functionality of link control and network protocol configuration together. However, it includes a mandatory step of securing a given link either through outer means (DTLS, IPsec, or MacSec) or through a native method inside this ICN-LLC framework. Inside the secure association, a data pipe abstraction is provided for local control as well as ICN transfer traffic. The ICN-LLC framework enables to manage the corresponding session and pipe properties. For example, transfer pipes could be configured to offer reliable and ordered datagram delivery for CCNx or NDN traffic, or the session could execute a fragmentation protocol in order to increase the MTU of the pipes beyond the link-imposed limit." />
 
 </head>
 
@@ -457,8 +463,7 @@
   <h1 id="rfc.abstract">
   <a href="#rfc.abstract">Abstract</a>
 </h1>
-<p>This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework.</p>
-<p>Inside the secure association, a data pipe abstraction is provided for local control as well as ICN transfer traffic. The ICN-LLC framework enables to manage the corresponding session and pipe properties. For example, transfer pipes could be configured to offer reliable and ordered datagram delivery for CCNx or NDN traffic, or the session could execute a fragmentation protocol in order to increase the MTU of the pipes beyond the link-imposed limit.</p>
+<p>This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between point-to-point ICN-enabled endpoints. ICN-LLC is analogous to PPP in that it provides the functionality of link control and network protocol configuration together. However, it includes a mandatory step of securing a given link either through outer means (DTLS, IPsec, or MacSec) or through a native method inside this ICN-LLC framework. Inside the secure association, a data pipe abstraction is provided for local control as well as ICN transfer traffic. The ICN-LLC framework enables to manage the corresponding session and pipe properties. For example, transfer pipes could be configured to offer reliable and ordered datagram delivery for CCNx or NDN traffic, or the session could execute a fragmentation protocol in order to increase the MTU of the pipes beyond the link-imposed limit.</p>
 <h1 id="rfc.status">
   <a href="#rfc.status">Status of This Memo</a>
 </h1>
@@ -491,25 +496,31 @@
 <li>4.3.   <a href="#rfc.section.4.3">Logical Link Traffic</a></li>
 <li>4.4.   <a href="#rfc.section.4.4">Motivating the RPC encoding</a></li>
 </ul><li>5.   <a href="#rfc.section.5">LLC Identities and Security</a></li>
-<li>6.   <a href="#rfc.section.6">LLC Negotiation</a></li>
-<ul><li>6.1.   <a href="#rfc.section.6.1">Session Initialization</a></li>
-<li>6.2.   <a href="#rfc.section.6.2">Inspection (Get MTU)</a></li>
-<li>6.3.   <a href="#rfc.section.6.3">Secure Association Establishment</a></li>
-<li>6.4.   <a href="#rfc.section.6.4">Set MTU</a></li>
-<li>6.5.   <a href="#rfc.section.6.5">Create Logical Link (= pipe)</a></li>
-<li>6.6.   <a href="#rfc.section.6.6">Destroy Logical Link (= pipe)</a></li>
-<li>6.7.   <a href="#rfc.section.6.7">Keep-Alive</a></li>
-</ul><li>7.   <a href="#rfc.section.7">Fragmentation</a></li>
-<ul><li>7.1.   <a href="#rfc.section.7.1">Indexed fragmentation</a></li>
-</ul><li>8.   <a href="#rfc.section.8">Encoding of Non-control Traffic and RPC Parameters</a></li>
-<ul><li>8.1.   <a href="#rfc.section.8.1">Encoding of message type</a></li>
-<li>8.2.   <a href="#rfc.section.8.2">Encoding of a message&#8217;s fields (list encoding)</a></li>
-<li>8.3.   <a href="#rfc.section.8.3">Length of Identifier Fields</a></li>
-<li>8.4.   <a href="#rfc.section.8.4">Encoding Examples</a></li>
-<li>8.5.   <a href="#rfc.section.8.5">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></li>
-</ul><li>9.   <a href="#rfc.section.9">Security Considerations</a></li>
-<li>10.   <a href="#rfc.section.10">References</a></li>
-<li>11.   <a href="#rfc.section.11">RPC Verbs and Configuration Name Space</a></li>
+<li>6.   <a href="#rfc.section.6">LLC Protocol Mechanics</a></li>
+<ul><li>6.1.   <a href="#rfc.section.6.1">Link Creation</a></li>
+<ul><li>6.1.1.   <a href="#rfc.section.6.1.1">Session Initialization</a></li>
+<li>6.1.2.   <a href="#rfc.section.6.1.2">Inspection (Get MTU)</a></li>
+<li>6.1.3.   <a href="#rfc.section.6.1.3">Secure Association Establishment</a></li>
+</ul><li>6.2.   <a href="#rfc.section.6.2">Link Negotiation</a></li>
+<ul><li>6.2.1.   <a href="#rfc.section.6.2.1">Set MTU</a></li>
+<li>6.2.2.   <a href="#rfc.section.6.2.2">Configure Fragmentation Mode</a></li>
+</ul><li>6.3.   <a href="#rfc.section.6.3">Link Maintenance</a></li>
+<ul><li>6.3.1.   <a href="#rfc.section.6.3.1">Keep-Alive</a></li>
+<li>6.3.2.   <a href="#rfc.section.6.3.2">Link Reset</a></li>
+</ul><li>6.4.   <a href="#rfc.section.6.4">Protocol Configuration</a></li>
+<ul><li>6.4.1.   <a href="#rfc.section.6.4.1">Create Logical Link (= pipe)</a></li>
+<li>6.4.2.   <a href="#rfc.section.6.4.2">Destroy Logical Link (= pipe)</a></li>
+</ul><li>6.5.   <a href="#rfc.section.6.5">Fragmentation</a></li>
+<ul><li>6.5.1.   <a href="#rfc.section.6.5.1">Indexed fragmentation</a></li>
+</ul></ul><li>7.   <a href="#rfc.section.7">Encoding of Non-control Traffic and RPC Parameters</a></li>
+<ul><li>7.1.   <a href="#rfc.section.7.1">Encoding of message type</a></li>
+<li>7.2.   <a href="#rfc.section.7.2">Encoding of a message&#8217;s fields (list encoding)</a></li>
+<li>7.3.   <a href="#rfc.section.7.3">Length of Identifier Fields</a></li>
+<li>7.4.   <a href="#rfc.section.7.4">Encoding Examples</a></li>
+<li>7.5.   <a href="#rfc.section.7.5">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></li>
+</ul><li>8.   <a href="#rfc.section.8">Security Considerations</a></li>
+<li>9.   <a href="#rfc.section.9">References</a></li>
+<li>10.   <a href="#rfc.section.10">RPC Verbs and Configuration Name Space</a></li>
 <li><a href="#rfc.authors">Authors' Addresses</a></li>
 
 
@@ -555,10 +566,19 @@
 </ul>
 <h1 id="rfc.section.3"><a href="#rfc.section.3">3.</a> <a href="#icn-llc-concepts" id="icn-llc-concepts">ICN-LLC Concepts</a></h1>
 <h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#assumptions" id="assumptions">Assumptions</a></h1>
-<p id="rfc.section.3.1.p.1">The ICN-LLC protocol makes the following assumptions:</p>
-<p id="rfc.section.3.1.p.2">(1) The communication parameters necessary to communicate over a link are established before the protocol is executed. This includes settings that, for example, enable bidirectional firewall traversal.</p>
-<p id="rfc.section.3.1.p.3">(2) The underlying link protocol provides the most basic ability to frame/encapsulate and move an arbitrary (up to some maximum) sized payload from one endpoint to another. We do not assume ordered or reliable datagram transfer. Thus, the protocol is entirely transport-agnostic.</p>
-<p id="rfc.section.3.1.p.4">(3) All ICN-LLC traffic must be protected using authenticated encryption. Two cases are distinguished, as shown in the following protocol stack configurations:</p>
+<p id="rfc.section.3.1.p.1">Logically, the ICN-LLC protocol is analogous to PPP in that it provides the functionality of link control and higher-level network protocol (e.g., NDN, CCNx) configuration together. It is comprosed of the following procedures:</p>
+<p/>
+
+<ul>
+  <li>Link Creation (session initialization, inspection, SA inititialization)</li>
+  <li>Link Negotiation (get/set MTU and other options or features, such as fragmentation)</li>
+  <li>Link Management (keep-alive, destroy session, and reset session)</li>
+  <li>Protocol Configuration (create and destroy pipes or logical links)</li>
+</ul>
+<p id="rfc.section.3.1.p.3">The ICN-LLC protocol makes the following assumptions:</p>
+<p id="rfc.section.3.1.p.4">(1) The communication parameters necessary to communicate over a link are established before the protocol is executed. This includes settings that, for example, enable bidirectional firewall traversal.</p>
+<p id="rfc.section.3.1.p.5">(2) The underlying link protocol provides the most basic ability to frame/encapsulate and move an arbitrary (up to some maximum) sized payload from one endpoint to another. We do not assume ordered or reliable datagram transfer. Thus, the protocol is entirely transport-agnostic.</p>
+<p id="rfc.section.3.1.p.6">(3) All ICN-LLC traffic must be protected using authenticated encryption. Two cases are distinguished, as shown in the following protocol stack configurations:</p>
 <pre>
               client apps                        client apps
                    |                                  |
@@ -574,14 +594,14 @@
   +-------------------+              +===================+
   | link: datagram srv|              | link: datagram srv|
   +-------------------+              +-------------------+
-  
+
  3a) outer security context      3b) security part of ICN-LLC
 </pre>
-<p id="rfc.section.3.1.p.5">(3a) The underlying link comes enhanced with an &#8220;outer security context&#8221; i.e. it already provides security guarantees such that the peers are mutually authenticated and link datagrams are encrypted.  In this case the ICN-LLC protocol reduces to handling the controll traffic and creating and tearing down pipes for ICN transfer traffic.</p>
-<p id="rfc.section.3.1.p.6">(3b) If the link that underlies the ICN-LLC protocol is unauthenticated and unprotected, the ICN-LLC framework provides its own means to secure the communication. Only thereafter it is possible to establish and manage ICN transfer pipes.</p>
-<p id="rfc.section.3.1.p.7">In this case where ICN-LLC has to do the setup of a secure association, it is assumed that each endpoint has or can generate a cryptographic identity and can prove its identity to the other endpoints over the respective links.</p>
-<p id="rfc.section.3.1.p.8">Moreover, endpoints have then to be pre-configured with one or more trust anchors permitting them to identity other endpoints that they trust i.e., those endpoints that are allowed to participate in the execution of the ICN-LLC protocol. These identities could be ascertained online (making us of the trust anchors) or be pre-configured manually by system administrators.</p>
-<p id="rfc.section.3.1.p.9">Note that in this case some intialization messages will be transported in clear until the secure association is established, or until a reset of the session is requested.</p>
+<p id="rfc.section.3.1.p.7">(3a) The underlying link comes enhanced with an &#8220;outer security context&#8221; i.e. it already provides security guarantees such that the peers are mutually authenticated and link datagrams are encrypted.  In this case the ICN-LLC protocol reduces to handling the controll traffic and creating and tearing down pipes for ICN transfer traffic.</p>
+<p id="rfc.section.3.1.p.8">(3b) If the link that underlies the ICN-LLC protocol is unauthenticated and unprotected, the ICN-LLC framework provides its own means to secure the communication. Only thereafter it is possible to establish and manage ICN transfer pipes.</p>
+<p id="rfc.section.3.1.p.9">In this case where ICN-LLC has to do the setup of a secure association, it is assumed that each endpoint has or can generate a cryptographic identity and can prove its identity to the other endpoints over the respective links.</p>
+<p id="rfc.section.3.1.p.10">Moreover, endpoints have then to be pre-configured with one or more trust anchors permitting them to identity other endpoints that they trust i.e., those endpoints that are allowed to participate in the execution of the ICN-LLC protocol. These identities could be ascertained online (making us of the trust anchors) or be pre-configured manually by system administrators.</p>
+<p id="rfc.section.3.1.p.11">Note that in this case some intialization messages will be transported in clear until the secure association is established, or until a reset of the session is requested.</p>
 <h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#cast" id="cast">Cast</a></h1>
 <p id="rfc.section.3.2.p.1">The ICN-LLC protocol entity exposes an API towards its clients, as is shown in the following diagram.</p>
 <div id="rfc.figure.2"/>
@@ -628,7 +648,7 @@
 </pre>
 <h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#client-work-flow-for-unsecured-links" id="client-work-flow-for-unsecured-links">Client work flow (for unsecured links)</a></h1>
 <p id="rfc.section.3.4.p.1">In case that the underlying link offers either raw and unsecured UDP, IP or Ethernet datagrams, ICN endnotes will use the API as follows.</p>
-<p id="rfc.section.3.4.p.2">A CCNx router wanting to establish a secure link to a peer:</p>
+<p id="rfc.section.3.4.p.2">Scenario: A CCNx router wanting to establish a secure link to a peer:</p>
 <pre>
    llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
    s = icnllc_openSession(llc, &amp;remoteUDP, &amp;myTrustAnchor);
@@ -647,18 +667,18 @@
    icnllc_closeSession(s)
    icnllc_fini(llc);
 </pre>
-<p id="rfc.section.3.4.p.3">A NDN router waiting for session establishment from other peers would issue this sequence of actions (without showing error handling):</p>
+<p id="rfc.section.3.4.p.3">Scenario: A NDN router waiting for session establishment from other peers would issue this sequence of actions (without showing error handling):</p>
 <pre>
    llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
    ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
    // ... serve pipe establishment in NDNupcall()
-   
+
    icnllc_deregister(ndn);
    icnllc_fini(llc);
 </pre>
 <h1 id="rfc.section.3.5"><a href="#rfc.section.3.5">3.5.</a> <a href="#client-work-flow-for-secured-links" id="client-work-flow-for-secured-links">Client work flow (for secured links)</a></h1>
-<p id="rfc.section.3.5.p.1">If the underlying link is secured, the use of the API is simplified for the initiator side.</p>
-<p id="rfc.section.3.5.p.2">An endnode wanting to create logical pipes to two different remote NFD processes on the same host:</p>
+<p id="rfc.section.3.5.p.1">If the underlying link is secured, the use of the API is simplified for the initiator side since no SA establishment must take place.</p>
+<p id="rfc.section.3.5.p.2">Scenario: An endnode wanting to create logical pipes to two different remote NFD processes on the same host:</p>
 <pre>
    llc = icnllc_trustedInit(securedSocket, &amp;eventCallback);
    s = icnllc_openSession(llc, NULL, NULL);
@@ -720,11 +740,12 @@
 <p id="rfc.section.5.p.5">Again, at a minimum, authentication based on ephemeral identities is mandatory.  Each endpoint may opt for strong authentication using a long-term identity.  For example, one endhost may use an ephemeral identity to authenticate itself with another endpoint using a long-term identity, or vice versa. Alternatively, both endpoints may use long-term identities during authentication. These combinatorial options are outlined below.</p>
 <p id="rfc.section.5.p.6">1) Both endpoints authenticate themselves with ephemeral identities. This type of configuration may be suitable for two endpoints (i.e., a consumer device and forwarder) which are both within a common enterprise network.  2) One endpoint authenticates itself with an ephemeral identity, and the other authenticates itself with a long-term identity. This type of configuration is appropriate in cases where an access point should only allow trusted clients to connect send traffic to the network. In such a scenario, clients would possess long-term identities that are trusted by the access point, whereas the access point uses an ephemeral identity since consumers need not care about its trustworthiness.  3) Both endpoints authenticate themselves with long-term identities. This type of configuration may be suitable for two core routers or forwarders in the public Internet.</p>
 <p id="rfc.section.5.p.7">Note that supporting ephemeral identities for authentication enables traffic to flow freely through an endpoint. This may be undesireable in some cases (i.e., for a router in the public Internet), but may be acceptable for others (i.e., a forwarder within a trusted enterprise network).</p>
-<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#llc-negotiation" id="llc-negotiation">LLC Negotiation</a></h1>
-<p id="rfc.section.6.p.1">We now describe the negotiation procedures and tasks (RPC calls) that are used in the LLC protocol. Any side can initiate a remote procedure call at any time.  It is suggested to limit the number of RPCs that one side issues in parallel to four (including nesting). For simplicity, we refer to each of the endpoints in the protocol as Q for Questioner and R for Responder.</p>
-<p id="rfc.section.6.p.2">The negotion tasks are performed imperatively: a questioner first selects the supported or provided values for a given option from the responder, and then subsequently sets the value of said option using one of the supported values. Failures occur when a questioner fails to use or provide a correct value for the responder (i.e., an invalid MTU value is set, or an unsupported cryptographic algorithm is specified). In all cases, when failures occur, the responder replies with a negative acknowledgement flag (FAIL) and lists the reason for the failure. The failure reason indicates only what option, command, or parameter was invalid, and does not provide details or possible remediation actions.</p>
-<h1 id="rfc.section.6.1"><a href="#rfc.section.6.1">6.1.</a> <a href="#session-initialization" id="session-initialization">Session Initialization</a></h1>
-<p id="rfc.section.6.1.p.1">The session initialization task is the first step in establishing and using a link between two endpoints. Assuming such a communication link for the underlying transport protocol is established, it is done by the following RPC exchange.</p>
+<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#llc-protocol-mechanics" id="llc-protocol-mechanics">LLC Protocol Mechanics</a></h1>
+<p id="rfc.section.6.p.1">We now describe the procedures and tasks (RPC calls) that are used in the LLC protocol. Any side can initiate a remote procedure call at any time.  It is suggested to limit the number of RPCs that one side issues in parallel to four (including nesting). For simplicity, we refer to each of the endpoints in the protocol as Q for Questioner and R for Responder.</p>
+<h1 id="rfc.section.6.1"><a href="#rfc.section.6.1">6.1.</a> <a href="#link-creation" id="link-creation">Link Creation</a></h1>
+<p id="rfc.section.6.1.p.1">Link creation is composed of session initialization, MTU discovery, and SA establishment. All tasks following creation are related to negotiation and management, and will be described later.</p>
+<h1 id="rfc.section.6.1.1"><a href="#rfc.section.6.1.1">6.1.1.</a> <a href="#session-initialization" id="session-initialization">Session Initialization</a></h1>
+<p id="rfc.section.6.1.1.p.1">The session initialization task is the first step in establishing and using a link between two endpoints. Assuming such a communication link for the underlying transport protocol is established, it is done by the following RPC exchange.</p>
 <div id="rfc.figure.4"/>
 <div id="session-init"/>
 <pre>
@@ -736,11 +757,11 @@ On failure:
   Q&lt;--R: rpc-response((SID-1,0), nonce), FAIL, list(&lt;reason&gt;))
 </pre>
 <p class="figure">Figure 4: Session Initialization Message Exchange.</p>
-<p id="rfc.section.6.1.p.2">After that exchange was executed, both ends will use the session ID consisting of SID-1 and SID-2 i.e., (SID-1, SID-2) in order to refer to this new session. In the following we abbreviate this tuple to SID.</p>
-<p id="rfc.section.6.1.p.3">Note that session initialization leaves the two endpoints in an unsecure state until they have executed the secure association task (see below).</p>
-<p id="rfc.section.6.1.p.4">{Question: how to handle/mitigate an attacker injecting such &#8220;reset&#8221; messages?} {CAW: each side could store a hash preimage that is revealed during the SA step, but this induces state. If these two operations are separated, then some state is necessary.}</p>
-<h1 id="rfc.section.6.2"><a href="#rfc.section.6.2">6.2.</a> <a href="#inspection-get-mtu" id="inspection-get-mtu">Inspection (Get MTU)</a></h1>
-<p id="rfc.section.6.2.p.1">Inspection messages may be used to recover generic information from an endpoint, e.g., the preferred MTU size. The RPC exchange for an inspection message is as follows.</p>
+<p id="rfc.section.6.1.1.p.2">After that exchange was executed, both ends will use the session ID consisting of SID-1 and SID-2 i.e., (SID-1, SID-2) in order to refer to this new session. In the following we abbreviate this tuple to SID.</p>
+<p id="rfc.section.6.1.1.p.3">Note that session initialization leaves the two endpoints in an unsecure state until they have executed the secure association task (see below).</p>
+<p id="rfc.section.6.1.1.p.4">{Question: how to handle/mitigate an attacker injecting such &#8220;reset&#8221; messages?} {CAW: each side could store a hash preimage that is revealed during the SA step, but this induces state. If these two operations are separated, then some state is necessary.}</p>
+<h1 id="rfc.section.6.1.2"><a href="#rfc.section.6.1.2">6.1.2.</a> <a href="#inspection-get-mtu" id="inspection-get-mtu">Inspection (Get MTU)</a></h1>
+<p id="rfc.section.6.1.2.p.1">Inspection messages may be used to recover generic information from an endpoint, e.g., the preferred MTU size. The RPC exchange for an inspection message is as follows.</p>
 <div id="rfc.figure.5"/>
 <div id="inspection-msg"/>
 <pre>
@@ -752,12 +773,12 @@ On failure:
   Q&lt;--R: rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))
 </pre>
 <p class="figure">Figure 5: Remote inspection (for MTU).</p>
-<p id="rfc.section.6.2.p.2">Inspection messages may be used to query any well-named object from the recipient endpoint. In the example above, the inspection for the preferred MTU would usually occur before establishing a secure session association (SA).  Thus, before SA, the contents of the RPC request and response are unencrypted.  However, after a SA is established, all inspection messages will be encrypted like other link traffic.</p>
-<h1 id="rfc.section.6.3"><a href="#rfc.section.6.3">6.3.</a> <a href="#secure-association-establishment" id="secure-association-establishment">Secure Association Establishment</a></h1>
-<p id="rfc.section.6.3.p.1">The secure association (SA) establishment message exchange is used to create a secure session over a given link. This enables all subsequent traffic, including RPC exchanges, to be authenticated and encrypted. The goal is for each endpoint to authenticate the entity running on the other endpoint of a given link, and to then establish shared symmetric keys to perform authenticated encryption of all traffic that follows the exchange. Currently, we specify a simple challenge-response authentication protocol that enables mutual authentication with ephemeral identities.  This can be replaced with any functionally equivalent protocol.</p>
-<p id="rfc.section.6.3.p.2">Note that authorization is distinctly separate from SA authentication, and is based on the set of trusted identities in possession by each endpoint. For example, an endpoint will authenticate another endpoint requesting to establish a SA, but it will not authorize the endpoint unless the identity it used to authenticate itself is trusted by the receiver. Therefore, it should be clear that authorization is not possible with ephemeral identities; authorization can only happen with long-term trusted identities.</p>
-<p id="rfc.section.6.3.p.3">Also, observe that the SA involves nested RPCs: The responder to the initial RPC request will do an RPC in reverse direction in order to authenticate the requestor.</p>
-<p id="rfc.section.6.3.p.4">Finally, for notational purposes, Encrypt(K,M) stands for the ciphertext resulting from applying key K to message M and Signature(K,M) for a signature of M using key K.</p>
+<p id="rfc.section.6.1.2.p.2">Inspection messages may be used to query any well-named object from the recipient endpoint. In the example above, the inspection for the preferred MTU would usually occur before establishing a secure session association (SA).  Thus, before SA, the contents of the RPC request and response are unencrypted.  However, after a SA is established, all inspection messages will be encrypted like other link traffic.</p>
+<h1 id="rfc.section.6.1.3"><a href="#rfc.section.6.1.3">6.1.3.</a> <a href="#secure-association-establishment" id="secure-association-establishment">Secure Association Establishment</a></h1>
+<p id="rfc.section.6.1.3.p.1">The secure association (SA) establishment message exchange is used to create a secure session over a given link. This enables all subsequent traffic, including RPC exchanges, to be authenticated and encrypted. The goal is for each endpoint to authenticate the entity running on the other endpoint of a given link, and to then establish shared symmetric keys to perform authenticated encryption of all traffic that follows the exchange. Currently, we specify a simple challenge-response authentication protocol that enables mutual authentication with ephemeral identities.  This can be replaced with any functionally equivalent protocol.</p>
+<p id="rfc.section.6.1.3.p.2">Note that authorization is distinctly separate from SA authentication, and is based on the set of trusted identities in possession by each endpoint. For example, an endpoint will authenticate another endpoint requesting to establish a SA, but it will not authorize the endpoint unless the identity it used to authenticate itself is trusted by the receiver. Therefore, it should be clear that authorization is not possible with ephemeral identities; authorization can only happen with long-term trusted identities.</p>
+<p id="rfc.section.6.1.3.p.3">Also, observe that the SA involves nested RPCs: The responder to the initial RPC request will do an RPC in reverse direction in order to authenticate the requestor.</p>
+<p id="rfc.section.6.1.3.p.4">Finally, for notational purposes, Encrypt(K,M) stands for the ciphertext resulting from applying key K to message M and Signature(K,M) for a signature of M using key K.</p>
 <div id="rfc.figure.6"/>
 <div id="sa-init"/>
 <pre>
@@ -778,24 +799,24 @@ Q&lt;--R: rpc-response((SID, nonceA), OK,
                      Encrypt(keyAB, (PIDb, challengeA-2, nonceA, key-R-ID)))
 </pre>
 <p class="figure">Figure 6: Secure Association with two challenge-response rounds.</p>
-<p id="rfc.section.6.3.p.5">In the first message, the value NIL is used to represent an empty nonce.</p>
-<p id="rfc.section.6.3.p.6">The fields named optionsA and optionsB are key-value data structures that contain the following information, at a minimum:</p>
+<p id="rfc.section.6.1.3.p.5">In the first message, the value NIL is used to represent an empty nonce.</p>
+<p id="rfc.section.6.1.3.p.6">The fields named optionsA and optionsB are key-value data structures that contain the following information, at a minimum:</p>
 <p/>
 
 <ul>
   <li>Preferred identity information (e.g., the form of signature algorithm to use when processing the challenge and response, list of available certificates or contained KeyIds, and the type of identity required by the endpoint &#8211; EPHEMERAL-IDENTITY or TRUSTED-IDENTITY).</li>
   <li>Diffie Hellman group parameters</li>
 </ul>
-<p id="rfc.section.6.3.p.8">If R supports the Diffie Hellman group options provided by Q in optionsA, then those same values will be echoed back to Q in the optionsB structure.</p>
-<p id="rfc.section.6.3.p.9">The key key-{Q,R} is a private key of {Q,R} or a symmetric key shared between Q and R. The identifiers key-{Q,R}-ID are the corresponding key IDs of key-{Q,R}. Since the list of trusted certificates and KeyIds are provided in the initial &#8220;prove-identity&#8221; RPC request, the response must indicate which key was used to verify the signature. These identifiers can correspond to public keys or pre-shared keys: the only requirement is that, if TRUSTED-IDENTITY authentication is used, the recipient must be able to match the KeyId against their list of KeyIds.</p>
-<p id="rfc.section.6.3.p.10">Lastly, keyAB is the key material derived from the output of the Diffie Hellman exchange with the shares keyshareA and keyshareB. That is, logically,</p>
+<p id="rfc.section.6.1.3.p.8">If R supports the Diffie Hellman group options provided by Q in optionsA, then those same values will be echoed back to Q in the optionsB structure.</p>
+<p id="rfc.section.6.1.3.p.9">The key key-{Q,R} is a private key of {Q,R} or a symmetric key shared between Q and R. The identifiers key-{Q,R}-ID are the corresponding key IDs of key-{Q,R}. Since the list of trusted certificates and KeyIds are provided in the initial &#8220;prove-identity&#8221; RPC request, the response must indicate which key was used to verify the signature. These identifiers can correspond to public keys or pre-shared keys: the only requirement is that, if TRUSTED-IDENTITY authentication is used, the recipient must be able to match the KeyId against their list of KeyIds.</p>
+<p id="rfc.section.6.1.3.p.10">Lastly, keyAB is the key material derived from the output of the Diffie Hellman exchange with the shares keyshareA and keyshareB. That is, logically,</p>
 <pre>
 keyAB = DH(keyshareA, keyshareB)
 </pre>
-<p id="rfc.section.6.3.p.11">When a failure occurs in the secure association RPC (not shown in the diagram above), the recipient replies with an error code (in clear) as in the Inspection message case and does not establish a new (or replace an old) secured logical link.</p>
-<p id="rfc.section.6.3.p.12">Otherwise the secure association request succeeded and from this point in time on the two endpoints will exchange their control messages in encrypted form inside pipes.</p>
-<p id="rfc.section.6.3.p.13">To this end, the protocol above exchanged and authenticated two endpoint-chosen numbers PIDa and PIDb. The pipe starting from the side that chose the PIDa value, will use pipe ID PIDAB = (PIDa, PIDb) while the other side can use pipe identifier PIDBA = (PIDb,PIDa) to reply.  Subsequently we will refer to the respective logical link identifiers that result from this as LIDAB=(SID,PIDAB,nonce) and LIDBA=(SID,PIDBA,nonce), where nonce is generated randomly per-message.</p>
-<p id="rfc.section.6.3.p.14">For example, the remote inspection RPC can now be executed in a secured fashion as follows:</p>
+<p id="rfc.section.6.1.3.p.11">When a failure occurs in the secure association RPC (not shown in the diagram above), the recipient replies with an error code (in clear) as in the Inspection message case and does not establish a new (or replace an old) secured logical link.</p>
+<p id="rfc.section.6.1.3.p.12">Otherwise the secure association request succeeded and from this point in time on the two endpoints will exchange their control messages in encrypted form inside pipes.</p>
+<p id="rfc.section.6.1.3.p.13">To this end, the protocol above exchanged and authenticated two endpoint-chosen numbers PIDa and PIDb. The pipe starting from the side that chose the PIDa value, will use pipe ID PIDAB = (PIDa, PIDb) while the other side can use pipe identifier PIDBA = (PIDb,PIDa) to reply.  Subsequently we will refer to the respective logical link identifiers that result from this as LIDAB=(SID,PIDAB,nonce) and LIDBA=(SID,PIDBA,nonce), where nonce is generated randomly per-message.</p>
+<p id="rfc.section.6.1.3.p.14">For example, the remote inspection RPC can now be executed in a secured fashion as follows:</p>
 <div id="rfc.figure.7"/>
 <div id="secure-inspection"/>
 <pre>
@@ -808,8 +829,10 @@ Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
                                 OK, (&lt;MTU value&gt;))))
 </pre>
 <p class="figure">Figure 7: RPC inside a local pipe.</p>
-<h1 id="rfc.section.6.4"><a href="#rfc.section.6.4">6.4.</a> <a href="#set-mtu" id="set-mtu">Set MTU</a></h1>
-<p id="rfc.section.6.4.p.1">Setting the MTU is a standard message in the LLC protocol that has the following RPC exchange format.</p>
+<h1 id="rfc.section.6.2"><a href="#rfc.section.6.2">6.2.</a> <a href="#link-negotiation" id="link-negotiation">Link Negotiation</a></h1>
+<p id="rfc.section.6.2.p.1">The negotiation tasks are performed imperatively: a questioner first selects the supported or provided values for a given option from the responder, and then subsequently sets the value of said option using one of the supported values. Failures occur when a questioner fails to use or provide a correct value for the responder (i.e., an invalid MTU value is set, or an unsupported cryptographic algorithm is specified). In all cases, when failures occur, the responder replies with a negative acknowledgement flag (FAIL) and lists the reason for the failure. The failure reason indicates only what option, command, or parameter was invalid, and does not provide details or possible remediation actions.</p>
+<h1 id="rfc.section.6.2.1"><a href="#rfc.section.6.2.1">6.2.1.</a> <a href="#set-mtu" id="set-mtu">Set MTU</a></h1>
+<p id="rfc.section.6.2.1.p.1">Setting the MTU is a standard message in the LLC protocol that has the following RPC exchange format. (We assume the MTU was already acquired from the prior inquiry performed in the link creation step of the protocol.)</p>
 <div id="rfc.figure.8"/>
 <div id="set-mtu-msg"/>
 <pre>
@@ -824,9 +847,58 @@ On failure:
                      rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))))
 </pre>
 <p class="figure">Figure 8: Set the MTU.</p>
-<h1 id="rfc.section.6.5"><a href="#rfc.section.6.5">6.5.</a> <a href="#create-logical-link-pipe" id="create-logical-link-pipe">Create Logical Link (= pipe)</a></h1>
-<p id="rfc.section.6.5.p.1">After a session and SA have been established, the protocol-specific links (pipe) must be created. This is done with the following exchange. The number 5 shown below is arbitrary and signals for this specific task that Q or R can choose their part of the pipe ID at will.</p>
+<h1 id="rfc.section.6.2.2"><a href="#rfc.section.6.2.2">6.2.2.</a> <a href="#configure-fragmentation-mode" id="configure-fragmentation-mode">Configure Fragmentation Mode</a></h1>
+<p id="rfc.section.6.2.2.p.1">Fragmentation is a necessary part of a link protocol. A questioner will lookup the supported fragmentation options and then subsequently ask to configure them, as shown below.</p>
 <div id="rfc.figure.9"/>
+<div id="get-frag-msg"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "get", ("/conf/frag"))))
+
+Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                    rpc-response((SID, nonce), OK, (&lt;frag-mode-list&gt;, &lt;frag-size-list&gt;))))
+</pre>
+<p class="figure">Figure 9: Get the fragmentation options.</p>
+<div id="rfc.figure.10"/>
+<div id="set-frag-msg"/>
+<pre>
+Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "set", ("/conf/frag", &lt;frag-mode&gt;, &lt;frag-size&gt;))))
+
+On success:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), OK, (&lt;frag-mode&gt;, &lt;frag-size&gt;))))
+On failure:
+  Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
+                     rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))))
+</pre>
+<p class="figure">Figure 10: Set the fragmentation options.</p>
+<h1 id="rfc.section.6.3"><a href="#rfc.section.6.3">6.3.</a> <a href="#link-maintenance" id="link-maintenance">Link Maintenance</a></h1>
+<p id="rfc.section.6.3.p.1">Link maintenance is composed of the tasks needed to detect failures and recover.  Currently, this is done with periodic heartbeat or keep-alive messages sent from both endpoints for a specific link.</p>
+<h1 id="rfc.section.6.3.1"><a href="#rfc.section.6.3.1">6.3.1.</a> <a href="#keep-alive" id="keep-alive">Keep-Alive</a></h1>
+<p id="rfc.section.6.3.1.p.1">Use the NOOP call to verify that the peer session manager is still up and running.</p>
+<pre>
+Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
+                   rpc-request((SID, nonce), NOOP, NIL)))
+
+Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
+                   rpc-response((SID, nonce), OK, NIL)))
+</pre>
+<h1 id="rfc.section.6.3.2"><a href="#rfc.section.6.3.2">6.3.2.</a> <a href="#link-reset" id="link-reset">Link Reset</a></h1>
+<p id="rfc.section.6.3.2.p.1">If the link (not pipe) needs to be reset, the issuer of the request must send this message in cleartext (e.g., in case the session keys are lost).  This is a simple reset exchange that succeeds only if the recipient agrees to reset the link and destroy all session state. A responder should only agree to this step if they have not received any traffic from the link over a specific period of time (to avoid malicious reset attempts).</p>
+<pre>
+Q--&gt;R: rpc-request(SID, nonce), RESET, NIL)
+
+On success:
+  Q&lt;--R: rpc-response((SID, nonce), OK)
+On failure:
+  Q&lt;--R: rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))
+</pre>
+<h1 id="rfc.section.6.4"><a href="#rfc.section.6.4">6.4.</a> <a href="#protocol-configuration" id="protocol-configuration">Protocol Configuration</a></h1>
+<p id="rfc.section.6.4.p.1">With a secured session established, and link features negotiated, both endpoints can then begin constructing and managing logical links (pipes) for ICN traffic.  We currently describe the mechanisms to create and destroy these links. Other features can be added as needed using the same model.</p>
+<h1 id="rfc.section.6.4.1"><a href="#rfc.section.6.4.1">6.4.1.</a> <a href="#create-logical-link-pipe" id="create-logical-link-pipe">Create Logical Link (= pipe)</a></h1>
+<p id="rfc.section.6.4.1.p.1">After a session and SA have been established, the protocol-specific links (pipe) must be created. This is done with the following exchange. The number 5 shown below is arbitrary and signals for this specific task that Q or R can choose their part of the pipe ID at will.</p>
+<div id="rfc.figure.11"/>
 <div id="pipe-create"/>
 <pre>
 Q--&gt;R: llt-message(LIDAB, Encrypt(keyAB,
@@ -839,20 +911,20 @@ On failure:
   Q&lt;--R: llt-message(LIDBA, Encrypt(keyAB,
                      rpc-response((SID, nonce), FAIL, (&lt;reason&gt;))))
 </pre>
-<p class="figure">Figure 9: Logical Link (Pipe) Creation.</p>
-<p id="rfc.section.6.5.p.2">This creates a new pipe whose identifier is the tuple (PID-5a, PID-5b).  That is, for messages send through this pipe, questioner Q will use the logical link ID LID5Q = (SID, (PID-5a, PID-5b)), whereas the responder R will use LID5R = (SID, (PID-5b, PID-5a)).</p>
-<p id="rfc.section.6.5.p.3">Note that the messages will be encrypted by the symmetric key Key-5QR that was unilaterally chosen by the initiator of this RPC.  Since each pipe is owned and controlled by the session manager, it is sufficient for the session manager to simply derive and impose a new encryption key Key-5QR for the pipe during creation. In other words, it is not necessary to perform another multi-round Diffie Hellman key exchange.</p>
-<p id="rfc.section.6.5.p.4">The pipe creation needs a remote target, expressed in form of an client identifier &#8220;icn-protocol-identifier&#8221;. If the new pipe cannot be bound to such a client, the RPC may fail. A partial list of failure reasons:</p>
+<p class="figure">Figure 11: Logical Link (Pipe) Creation.</p>
+<p id="rfc.section.6.4.1.p.2">This creates a new pipe whose identifier is the tuple (PID-5a, PID-5b).  That is, for messages send through this pipe, questioner Q will use the logical link ID LID5Q = (SID, (PID-5a, PID-5b)), whereas the responder R will use LID5R = (SID, (PID-5b, PID-5a)).</p>
+<p id="rfc.section.6.4.1.p.3">Note that the messages will be encrypted by the symmetric key Key-5QR that was unilaterally chosen by the initiator of this RPC.  Since each pipe is owned and controlled by the session manager, it is sufficient for the session manager to simply derive and impose a new encryption key Key-5QR for the pipe during creation. In other words, it is not necessary to perform another multi-round Diffie Hellman key exchange.</p>
+<p id="rfc.section.6.4.1.p.4">The pipe creation needs a remote target, expressed in form of an client identifier &#8220;icn-protocol-identifier&#8221;. If the new pipe cannot be bound to such a client, the RPC may fail. A partial list of failure reasons:</p>
 <p/>
 
 <ul>
   <li>&#8220;Protocol not supported&#8221;</li>
   <li>&#8220;Invalid key size&#8221;</li>
 </ul>
-<p id="rfc.section.6.5.p.6">Currently, each pipe will use the same encryption algorithm and parameters for their respective traffic. This could be changed by allowing endpoints to negotiate these parameters during the pipe creation exchange.</p>
-<h1 id="rfc.section.6.6"><a href="#rfc.section.6.6">6.6.</a> <a href="#destroy-logical-link-pipe" id="destroy-logical-link-pipe">Destroy Logical Link (= pipe)</a></h1>
-<p id="rfc.section.6.6.p.1">Finally, when a pipe is finished, it must be destroyed and all state must be recycled. This is done with the following exchange.</p>
-<div id="rfc.figure.10"/>
+<p id="rfc.section.6.4.1.p.6">Currently, each pipe will use the same encryption algorithm and parameters for their respective traffic. This could be changed by allowing endpoints to negotiate these parameters during the pipe creation exchange.</p>
+<h1 id="rfc.section.6.4.2"><a href="#rfc.section.6.4.2">6.4.2.</a> <a href="#destroy-logical-link-pipe" id="destroy-logical-link-pipe">Destroy Logical Link (= pipe)</a></h1>
+<p id="rfc.section.6.4.2.p.1">Finally, when a pipe is finished, it must be destroyed and all state must be recycled. This is done with the following exchange.</p>
+<div id="rfc.figure.12"/>
 <div id="pipe-destroy"/>
 <pre>
 Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
@@ -861,23 +933,14 @@ Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
 Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 </pre>
-<p class="figure">Figure 10: Logical Link (Pipe) Destruction.</p>
-<p id="rfc.section.6.6.p.2">After this exchange, both parties tear down and recycle their local state. That is, both pipes (PID-5a,PID-5b) and (PID-5b,PID-5a) will be destroyed at the same time. This destroy action request is idempotent; attempting to destroy a non-existent pipe will yield an OK response from the recipient.</p>
-<p id="rfc.section.6.6.p.3">Note that the two pipes representing the logical control link, named (SID, PIDBA) and (SID, PIDAB) above, cannot be close. Instead, the &#8220;destroy-session&#8221; RPC must be used.</p>
-<h1 id="rfc.section.6.7"><a href="#rfc.section.6.7">6.7.</a> <a href="#keep-alive" id="keep-alive">Keep-Alive</a></h1>
-<p id="rfc.section.6.7.p.1">Use the NOOP call to verify that the peer session manager is still up and running.</p>
-<pre>
-Q--&gt;R: llt-message(LIDAB, encrypt(KeyAB,
-                   rpc-request((SID, nonce), NOOP, NIL)))
-
-Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
-                   rpc-response((SID, nonce), OK, NIL)))
-</pre>
-<h1 id="rfc.section.7"><a href="#rfc.section.7">7.</a> <a href="#fragmentation" id="fragmentation">Fragmentation</a></h1>
-<p id="rfc.section.7.p.1">As a link protocol, ICN-LLC must support fragmentation to the link MTU size. The used fragmentarion method is runtime-configurable and is subject to ICN-LLC&#8217;s negotiation methodology. Currently two (hop-by-hop) fragmentation schemas are envisaged: indexed fragmentation and Begin/End fragmentation.</p>
-<h1 id="rfc.section.7.1"><a href="#rfc.section.7.1">7.1.</a> <a href="#indexed-fragmentation" id="indexed-fragmentation">Indexed fragmentation</a></h1>
-<p id="rfc.section.7.1.p.1">In indexed fragmentation (without out-of-order delivery), all fragments of a given llt-message and RPC message share a unique nonce. We either reuse an RPC&#8217;s nonce, or create a special nonce for llt messages. Moreover, fragments carry an index number specifying at the order in which the carried bytes must be reassembled to yield the original message, and the number of fragments for the given message.</p>
-<p id="rfc.section.7.1.p.2">The fragments for LLC&#8217;s three packet types look as follows:</p>
+<p class="figure">Figure 12: Logical Link (Pipe) Destruction.</p>
+<p id="rfc.section.6.4.2.p.2">After this exchange, both parties tear down and recycle their local state. That is, both pipes (PID-5a,PID-5b) and (PID-5b,PID-5a) will be destroyed at the same time. This destroy action request is idempotent; attempting to destroy a non-existent pipe will yield an OK response from the recipient.</p>
+<p id="rfc.section.6.4.2.p.3">Note that the two pipes representing the logical control link, named (SID, PIDBA) and (SID, PIDAB) above, cannot be close. Instead, the &#8220;destroy-session&#8221; RPC must be used.</p>
+<h1 id="rfc.section.6.5"><a href="#rfc.section.6.5">6.5.</a> <a href="#fragmentation" id="fragmentation">Fragmentation</a></h1>
+<p id="rfc.section.6.5.p.1">As a link protocol, ICN-LLC must support fragmentation to the link MTU size. The used fragmentarion method is runtime-configurable and is subject to ICN-LLC&#8217;s negotiation methodology. Currently two (hop-by-hop) fragmentation schemas are envisaged: indexed fragmentation and Begin/End fragmentation.</p>
+<h1 id="rfc.section.6.5.1"><a href="#rfc.section.6.5.1">6.5.1.</a> <a href="#indexed-fragmentation" id="indexed-fragmentation">Indexed fragmentation</a></h1>
+<p id="rfc.section.6.5.1.p.1">In indexed fragmentation (without out-of-order delivery), all fragments of a given llt-message and RPC message share a unique nonce. We either reuse an RPC&#8217;s nonce, or create a special nonce for llt messages. Moreover, fragments carry an index number specifying at the order in which the carried bytes must be reassembled to yield the original message, and the number of fragments for the given message.</p>
+<p id="rfc.section.6.5.1.p.2">The fragments for LLC&#8217;s three packet types look as follows:</p>
 <pre>
   RPC-request((SID, nonce) ...) --&gt;
     RPC-request-frag((SID, nonce, ndx, cnt), part-of-orig-message)
@@ -888,37 +951,37 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
   llt-message((SID, PID, ...) --&gt;
     llt-message-frag(SID, PID, frag-nonce, ndx, cnt, part-of-orig-msg)
 </pre>
-<p id="rfc.section.7.1.p.3">The receiver of a fragmented message will buffer each fragment until all have been received. The size of this buffer is denoted by the fragment count in the LID and RID identifiers. The original message is reassembled upon receipt of all fragments and then delivered to the appropriate handler.</p>
-<p id="rfc.section.7.1.p.4">Also, each fragmented message buffer at the receiver is associated with a timer that is refreshed upon the receipt of a fragment. If this timer expires, the buffer is cleared and the partially received message is dropped.</p>
-<h1 id="rfc.section.8"><a href="#rfc.section.8">8.</a> <a href="#encoding-of-non-control-traffic-and-rpc-parameters" id="encoding-of-non-control-traffic-and-rpc-parameters">Encoding of Non-control Traffic and RPC Parameters</a></h1>
-<p id="rfc.section.8.p.1">Structurally, all three message types of ICN-LLC are identical in being a list of fields. A single header byte discriminates among the message types, followed by an encoding of the message&#8217;s field list:</p>
+<p id="rfc.section.6.5.1.p.3">The receiver of a fragmented message will buffer each fragment until all have been received. The size of this buffer is denoted by the fragment count in the LID and RID identifiers. The original message is reassembled upon receipt of all fragments and then delivered to the appropriate handler.</p>
+<p id="rfc.section.6.5.1.p.4">Also, each fragmented message buffer at the receiver is associated with a timer that is refreshed upon the receipt of a fragment. If this timer expires, the buffer is cleared and the partially received message is dropped.</p>
+<h1 id="rfc.section.7"><a href="#rfc.section.7">7.</a> <a href="#encoding-of-non-control-traffic-and-rpc-parameters" id="encoding-of-non-control-traffic-and-rpc-parameters">Encoding of Non-control Traffic and RPC Parameters</a></h1>
+<p id="rfc.section.7.p.1">Structurally, all three message types of ICN-LLC are identical in being a list of fields. A single header byte discriminates among the message types, followed by an encoding of the message&#8217;s field list:</p>
 <pre>
      Byte 0    Bytes 1 to N-1
   +---------+--------------//--+
   | msgtype | listEncoding ....|
   +---------+--------------//--+
 </pre>
-<h1 id="rfc.section.8.1"><a href="#rfc.section.8.1">8.1.</a> <a href="#encoding-of-message-type" id="encoding-of-message-type">Encoding of message type</a></h1>
-<p id="rfc.section.8.1.p.1">The assigned values for the one-byte-header are:</p>
+<h1 id="rfc.section.7.1"><a href="#rfc.section.7.1">7.1.</a> <a href="#encoding-of-message-type" id="encoding-of-message-type">Encoding of message type</a></h1>
+<p id="rfc.section.7.1.p.1">The assigned values for the one-byte-header are:</p>
 <pre>
   0x81  llt-message
   0x82  rpc-request
   0x83  rpc-response
 </pre>
-<h1 id="rfc.section.8.2"><a href="#rfc.section.8.2">8.2.</a> <a href="#encoding-of-a-messages-fields-list-encoding" id="encoding-of-a-messages-fields-list-encoding">Encoding of a message&#8217;s fields (list encoding)</a></h1>
-<p id="rfc.section.8.2.p.1">ICN-LLC encodes lists in a similar way as was proposed by Rivest for symbolic expressions [SEXPR]. The variation consists in combining the &#8220;list bit&#8221; with a variable length field and in omitting the 0x00 byte to signal the end-of-list (because the length field already encodes this information).</p>
-<p id="rfc.section.8.2.p.2">In ICN-LLC, a data structure is represented as a two-tuple of type+length and the content bytes: (TL, value). The length tells the amount of bytes needed to represent the value.</p>
-<p id="rfc.section.8.2.p.3">A data structure either is a list or an atom. The general format for a list is:</p>
+<h1 id="rfc.section.7.2"><a href="#rfc.section.7.2">7.2.</a> <a href="#encoding-of-a-messages-fields-list-encoding" id="encoding-of-a-messages-fields-list-encoding">Encoding of a message&#8217;s fields (list encoding)</a></h1>
+<p id="rfc.section.7.2.p.1">ICN-LLC encodes lists in a similar way as was proposed by Rivest for symbolic expressions [SEXPR]. The variation consists in combining the &#8220;list bit&#8221; with a variable length field and in omitting the 0x00 byte to signal the end-of-list (because the length field already encodes this information).</p>
+<p id="rfc.section.7.2.p.2">In ICN-LLC, a data structure is represented as a two-tuple of type+length and the content bytes: (TL, value). The length tells the amount of bytes needed to represent the value.</p>
+<p id="rfc.section.7.2.p.3">A data structure either is a list or an atom. The general format for a list is:</p>
 <pre>
   &lt;list-bit=1, len-in-bytes&gt; &lt;element-1&gt; ... &lt;element-N&gt;
 </pre>
-<p id="rfc.section.8.2.p.4">where an element can be either another list or an atom.</p>
-<p id="rfc.section.8.2.p.5">The format for an atom is:</p>
+<p id="rfc.section.7.2.p.4">where an element can be either another list or an atom.</p>
+<p id="rfc.section.7.2.p.5">The format for an atom is:</p>
 <pre>
   &lt;list-bit=0, len-in-bytes&gt; &lt;blob&gt;
 </pre>
-<p id="rfc.section.8.2.p.6">Two atom types are defined (but the type is not made explicit in the ICN-LLC encoding): Strings are encoded without trailing zero, integer values are signed and are encoded in network order format.</p>
-<p id="rfc.section.8.2.p.7">The type+len information is encoded with a varying number of bytes depending on the value of len. In the following diagram, &#8220;L&#8221; stands for the list-bit and &#8220;l&#8221; for a bit of the length value to be encoded (unsigned, network order).</p>
+<p id="rfc.section.7.2.p.6">Two atom types are defined (but the type is not made explicit in the ICN-LLC encoding): Strings are encoded without trailing zero, integer values are signed and are encoded in network order format.</p>
+<p id="rfc.section.7.2.p.7">The type+len information is encoded with a varying number of bytes depending on the value of len. In the following diagram, &#8220;L&#8221; stands for the list-bit and &#8220;l&#8221; for a bit of the length value to be encoded (unsigned, network order).</p>
 <pre>
   len value      encoding (bits)
 
@@ -927,15 +990,15 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
   8192..1048575  L110 llll  llll llll  llll llll
   reserved       L111 ...
 </pre>
-<h1 id="rfc.section.8.3"><a href="#rfc.section.8.3">8.3.</a> <a href="#length-of-identifier-fields" id="length-of-identifier-fields">Length of Identifier Fields</a></h1>
-<p id="rfc.section.8.3.p.1">Although fields can vary in length and therefore, for example, a pipeID could consist of two 8-bit values, it is recommended to implement identifiers according to the following MINIMAL lengths:</p>
+<h1 id="rfc.section.7.3"><a href="#rfc.section.7.3">7.3.</a> <a href="#length-of-identifier-fields" id="length-of-identifier-fields">Length of Identifier Fields</a></h1>
+<p id="rfc.section.7.3.p.1">Although fields can vary in length and therefore, for example, a pipeID could consist of two 8-bit values, it is recommended to implement identifiers according to the following MINIMAL lengths:</p>
 <pre>
   4 Bytes    nonce
   2x2 Bytes  session ID
   2x2 Bytes  pipe ID
 </pre>
-<h1 id="rfc.section.8.4"><a href="#rfc.section.8.4">8.4.</a> <a href="#encoding-examples" id="encoding-examples">Encoding Examples</a></h1>
-<p id="rfc.section.8.4.p.1">a) LLT message</p>
+<h1 id="rfc.section.7.4"><a href="#rfc.section.7.4">7.4.</a> <a href="#encoding-examples" id="encoding-examples">Encoding Examples</a></h1>
+<p id="rfc.section.7.4.p.1">a) LLT message</p>
 <pre>
   llt-message(((0x1234,0x5678)(0x1111,0x2222))"abc") --&gt; 21 Bytes
 
@@ -950,7 +1013,7 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
         0x02 0x11 0x11
     0x03 0x61 0x62 0x63    % payload
 </pre>
-<p id="rfc.section.8.4.p.2">b) RPC-request (start session)</p>
+<p id="rfc.section.7.4.p.2">b) RPC-request (start session)</p>
 <pre>
   rpc-request(((0x1234,0)0x73683559)"_rst"()) --&gt; 19 Bytes
 
@@ -966,7 +1029,7 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
       0x5f 0x72 0x73 0x74
     0x80                   % empty param list
 </pre>
-<p id="rfc.section.8.4.p.3">c) RPC-response (session ack)</p>
+<p id="rfc.section.7.4.p.3">c) RPC-response (session ack)</p>
 <pre>
   rpc-response(((0x1234,0x5678)0x73683559)0x00()) --&gt; 17 Bytes
 
@@ -981,22 +1044,22 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
     0x01 0x00              % OK
     0x80                   % empty param list
 </pre>
-<h1 id="rfc.section.8.5"><a href="#rfc.section.8.5">8.5.</a> <a href="#minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing" id="minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></h1>
-<p id="rfc.section.8.5.p.1">None of the three message types (LLT-message, RPC-request, RPC-response) may be fragmented.</p>
-<p id="rfc.section.8.5.p.2">However, using RPC and being subject to negotiation, peers might use RPC to transfer parts of a larger message for remote assembly and then trigger the delivery of that remote memory block.</p>
-<p id="rfc.section.8.5.p.3">The minimum (link-level) MTU is 1280 bytes.</p>
-<p id="rfc.section.8.5.p.4">Multiple LLC messages can be combined into one frame as long as they fully fit into the link&#8217;s MTU.</p>
-<h1 id="rfc.section.9"><a href="#rfc.section.9">9.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a></h1>
-<p id="rfc.section.9.p.1">yes</p>
-<h1 id="rfc.section.10"><a href="#rfc.section.10">10.</a> <a href="#references" id="references">References</a></h1>
+<h1 id="rfc.section.7.5"><a href="#rfc.section.7.5">7.5.</a> <a href="#minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing" id="minimum-mtu-fragmentation-of-llc-messages-and-message-stuffing">Minimum MTU, Fragmentation of LLC Messages and Message Stuffing</a></h1>
+<p id="rfc.section.7.5.p.1">None of the three message types (LLT-message, RPC-request, RPC-response) may be fragmented.</p>
+<p id="rfc.section.7.5.p.2">However, using RPC and being subject to negotiation, peers might use RPC to transfer parts of a larger message for remote assembly and then trigger the delivery of that remote memory block.</p>
+<p id="rfc.section.7.5.p.3">The minimum (link-level) MTU is 1280 bytes.</p>
+<p id="rfc.section.7.5.p.4">Multiple LLC messages can be combined into one frame as long as they fully fit into the link&#8217;s MTU.</p>
+<h1 id="rfc.section.8"><a href="#rfc.section.8">8.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a></h1>
+<p id="rfc.section.8.p.1">yes</p>
+<h1 id="rfc.section.9"><a href="#rfc.section.9">9.</a> <a href="#references" id="references">References</a></h1>
 <p/>
 
 <ul>
   <li>S-expressions   http://people.csail.mit.edu/rivest/Sexp.txt</li>
   <li>Network pointers http://conferences.sigcomm.org/hotnets/2002/papers/tschudin.ps</li>
 </ul>
-<h1 id="rfc.section.11"><a href="#rfc.section.11">11.</a> <a href="#rpc-verbs-and-configuration-name-space" id="rpc-verbs-and-configuration-name-space">RPC Verbs and Configuration Name Space</a></h1>
-<p id="rfc.section.11.p.1">Verbs:</p>
+<h1 id="rfc.section.10"><a href="#rfc.section.10">10.</a> <a href="#rpc-verbs-and-configuration-name-space" id="rpc-verbs-and-configuration-name-space">RPC Verbs and Configuration Name Space</a></h1>
+<p id="rfc.section.10.p.1">Verbs:</p>
 <pre>
   OK               byte 0x00
   FAIL             byte 0x01
@@ -1009,7 +1072,7 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
   PIPE-CREATE
   PIPE-DESTROY
 </pre>
-<p id="rfc.section.11.p.2">Constants and &#8220;state registers&#8221; (MIB):</p>
+<p id="rfc.section.10.p.2">Constants and &#8220;state registers&#8221; (MIB):</p>
 <pre>
   /proto/icn/....
 
