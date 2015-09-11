@@ -48,7 +48,7 @@ informative:
 
 This document describes an ICN logical link control (ICN-LLC) protocol
 to establish, configure, test, and negotiate options for links between
-ICN-enabled endpoints. This mandatorily includes securing a link
+ICN-enabled endpoints. This mandatorily includes securing a given link
 either through outer means (DTLS, IPsec or MacSec) or through a method
 inside this ICN-LLC framework.
 
@@ -103,24 +103,22 @@ two endpoints, so as to enable isolation and support future versioning.
 -->
 
 ~~~
-     1 link    carries    1 session    hosts   N pipes
-                
-  bidirectional,          secure               on-demand secure
-  potentially             endpoint             logical links,
-  secured                 association          unidirectional
+  +------------------------+
+  |   1 Link               |  bidirectional, potentially secured, given
+  |  +------------------+  |
+  |  |   1 Session      |  |  secure endpoint association, negotiated
+  |  |  +------------+  |  |
+  |  |  |   N Pipes  |  |  |  secure unidirectional logical links, on-demand
+  |  |  +------------+  |  |
+  |  +------------------+  |
+  +------------------------+
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
-All negotiation messages follow a Remote Procedure Call style
-(RPC). RPC in this context means an Interest/Content-style protocol
-with the addition of a universal parameter marshalling method.
-
-Each instance of a remote procedure call needs a unique identifier composed
-from several elements: The identity of the parent context (session), a
-unique call id, a verb that identifies the requested remote action as
-well as action-specific parameters. Each (RPC-) request is followed by
-an (RPC-) response which specifies the result of the operation, e.g.,
-an OK flag or a FAIL flag with some useful error information.
+All negotiations follow a Remote Procedure Call style (RPC). RPC in
+this context means: there is an Interest/Content-style
+request/response protocol with the addition of a universal parameter
+marshalling method.
 
 The goal of the ICN-LLC service is to provide a framework that enables
 two parties to negotiate session and pipe properties and to transfer
@@ -139,11 +137,6 @@ concepts and then provides a high-level description of the protocol
 (along with message content) as well as the encoding details of each
 message. A full encoding example completes this document.
 
-  <!-- - concepts
-  - high level protocol for specific negotiation tasks: (initSession, startSecureAssociation,
-    inspection, setMTU, create and destroy logical links)
-  - encodings? at least for RPC-request, RPC-response and DATAGRAM
-  - -->
 
 Definitions and Notation
 ========================
@@ -170,22 +163,18 @@ The following terms are used:
   by a session manager in which encrypted traffic is sent between two
   endpoints.
 
-* secure association: A set of shared security information (e.g., session keys)
-shared between two endpoints that is used for secure communication.
+* secure association: A set of shared security information (e.g.,
+  session keys) shared between two endpoints that is used for secure
+  communication.
 
-* RPC-request: A request to perform an RPC action from a sender to a receiver.
+* Remote Procedure Call (RPC): an Interest/Content exchange where an
+  Interest carries the name of a remote procedure to be called as well
+  as its parameters while the returned Content carries a return code and
+  a result data structure.
 
-* RPC-response: A response to an RPC-request sent from RPC-request
-  receiver to the RPC-request sender.
+* RPC-request: A request to perform a remote action.
 
-<!--
-sender: An endpoint which is sending a message from to another session over a link.
-
-sender: An endpoint which is receiving a message from another session over a link.
-
-datagram: A message that encapsulates protocol-specific traffic (e.g., an ICN
-interest or content object).
--->
+* RPC-response: The result of having executed an RPC-request.
 
 
 ICN-LLC Concepts
@@ -224,20 +213,22 @@ protocol stack configurations:
   +-------------------+              +===================+
   | link: datagram srv|              | link: datagram srv|
   +-------------------+              +-------------------+
+  
+ 3a) outer security context      3b) security part of ICN-LLC
 ~~~
 
-(3a) If the underlying link comes enhanced with an "outer security
+(3a) The underlying link comes enhanced with an "outer security
 context" i.e. it already provides security guarantees such that the
 peers are mutually authenticated and link datagrams are encrypted.  In
 this case the ICN-LLC protocol reduces to handling the controll
 traffic and creating and tearing down pipes for ICN transfer traffic.
 
-(3b) If an unauthenticated and unprotected link underlies the ICN-LLC
-message exchange, the ICN-LLC framework provides means to secure the
-link. Only thereafter it is possible to establish and manage ICN
-transfer pipes.
+(3b) If the link that underlies the ICN-LLC protocol is
+unauthenticated and unprotected, the ICN-LLC framework provides its
+own means to secure the communication. Only thereafter it is possible
+to establish and manage ICN transfer pipes.
 
-In that case where ICN-LLC has to do the setup of a secure
+In this case where ICN-LLC has to do the setup of a secure
 association, it is assumed that each endpoint has or can generate a
 cryptographic identity and can prove its identity to the other
 endpoints over the respective links.

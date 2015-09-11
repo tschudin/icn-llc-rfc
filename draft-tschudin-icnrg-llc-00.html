@@ -380,7 +380,8 @@
 <link href="#rfc.section.3.1" rel="Chapter" title="3.1 Assumptions"/>
 <link href="#rfc.section.3.2" rel="Chapter" title="3.2 Cast"/>
 <link href="#rfc.section.3.3" rel="Chapter" title="3.3 API for Endpoint Clients"/>
-<link href="#rfc.section.3.4" rel="Chapter" title="3.4 Client work flow"/>
+<link href="#rfc.section.3.4" rel="Chapter" title="3.4 Client work flow (for unsecured links)"/>
+<link href="#rfc.section.3.5" rel="Chapter" title="3.5 Client work flow (for secured links)"/>
 <link href="#rfc.section.4" rel="Chapter" title="4 Link-level RPC and Logical Link Traffic"/>
 <link href="#rfc.section.4.1" rel="Chapter" title="4.1 RPC-request"/>
 <link href="#rfc.section.4.2" rel="Chapter" title="4.2 RPC-response"/>
@@ -396,6 +397,7 @@
 <link href="#rfc.section.6.6" rel="Chapter" title="6.6 Destroy Logical Link (= pipe)"/>
 <link href="#rfc.section.6.7" rel="Chapter" title="6.7 Keep-Alive"/>
 <link href="#rfc.section.7" rel="Chapter" title="7 Fragmentation"/>
+<link href="#rfc.section.7.1" rel="Chapter" title="7.1 Indexed fragmentation"/>
 <link href="#rfc.section.8" rel="Chapter" title="8 Encoding of Non-control Traffic and RPC Parameters"/>
 <link href="#rfc.section.8.1" rel="Chapter" title="8.1 Encoding of message type"/>
 <link href="#rfc.section.8.2" rel="Chapter" title="8.2 Encoding of a message&#x2019;s fields (list encoding)"/>
@@ -413,9 +415,9 @@
 
   <meta name="dct.creator" content="Tschudin, C. and C. Wood" />
   <meta name="dct.identifier" content="urn:ietf:id:draft-tschudin-icnrg-llc-00" />
-  <meta name="dct.issued" scheme="ISO8601" content="2015-8-30" />
-  <meta name="dct.abstract" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can manage session and pipe properties, as well as encapsulate and transfer data messages belonging to separate ICN protocols over the same logical link. For example, pipes could be configured to provide reliable and ordered datagram delivery for CCNx or NDN traffic.  The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link control requirements." />
-  <meta name="description" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can manage session and pipe properties, as well as encapsulate and transfer data messages belonging to separate ICN protocols over the same logical link. For example, pipes could be configured to provide reliable and ordered datagram delivery for CCNx or NDN traffic.  The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link control requirements." />
+  <meta name="dct.issued" scheme="ISO8601" content="2015-9-09" />
+  <meta name="dct.abstract" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework." />
+  <meta name="description" content="This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework." />
 
 </head>
 
@@ -437,12 +439,12 @@
   <td class="right">C. Wood</td>
 </tr>
 <tr>
-  <td class="left">Expires: March 2, 2016</td>
+  <td class="left">Expires: March 12, 2016</td>
   <td class="right">PARC</td>
 </tr>
 <tr>
   <td class="left"></td>
-  <td class="right">August 30, 2015</td>
+  <td class="right">September 09, 2015</td>
 </tr>
 
     	
@@ -455,14 +457,15 @@
   <h1 id="rfc.abstract">
   <a href="#rfc.abstract">Abstract</a>
 </h1>
-<p>This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. The ICN-LLC protocol provides a framework in which two parties can manage session and pipe properties, as well as encapsulate and transfer data messages belonging to separate ICN protocols over the same logical link. For example, pipes could be configured to provide reliable and ordered datagram delivery for CCNx or NDN traffic.  The protocol is designed to be extensible so as to support a variety of endpoint- and application-specific link control requirements.</p>
+<p>This document describes an ICN logical link control (ICN-LLC) protocol to establish, configure, test, and negotiate options for links between ICN-enabled endpoints. This mandatorily includes securing a given link either through outer means (DTLS, IPsec or MacSec) or through a method inside this ICN-LLC framework.</p>
+<p>Inside the secure association, a data pipe abstraction is provided for local control as well as ICN transfer traffic. The ICN-LLC framework enables to manage the corresponding session and pipe properties. For example, transfer pipes could be configured to offer reliable and ordered datagram delivery for CCNx or NDN traffic, or the session could execute a fragmentation protocol in order to increase the MTU of the pipes beyond the link-imposed limit.</p>
 <h1 id="rfc.status">
   <a href="#rfc.status">Status of This Memo</a>
 </h1>
 <p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
 <p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
 <p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
-<p>This Internet-Draft will expire on March 2, 2016.</p>
+<p>This Internet-Draft will expire on March 12, 2016.</p>
 <h1 id="rfc.copyrightnotice">
   <a href="#rfc.copyrightnotice">Copyright Notice</a>
 </h1>
@@ -480,7 +483,8 @@
 <ul><li>3.1.   <a href="#rfc.section.3.1">Assumptions</a></li>
 <li>3.2.   <a href="#rfc.section.3.2">Cast</a></li>
 <li>3.3.   <a href="#rfc.section.3.3">API for Endpoint Clients</a></li>
-<li>3.4.   <a href="#rfc.section.3.4">Client work flow</a></li>
+<li>3.4.   <a href="#rfc.section.3.4">Client work flow (for unsecured links)</a></li>
+<li>3.5.   <a href="#rfc.section.3.5">Client work flow (for secured links)</a></li>
 </ul><li>4.   <a href="#rfc.section.4">Link-level RPC and Logical Link Traffic</a></li>
 <ul><li>4.1.   <a href="#rfc.section.4.1">RPC-request</a></li>
 <li>4.2.   <a href="#rfc.section.4.2">RPC-response</a></li>
@@ -496,7 +500,8 @@
 <li>6.6.   <a href="#rfc.section.6.6">Destroy Logical Link (= pipe)</a></li>
 <li>6.7.   <a href="#rfc.section.6.7">Keep-Alive</a></li>
 </ul><li>7.   <a href="#rfc.section.7">Fragmentation</a></li>
-<li>8.   <a href="#rfc.section.8">Encoding of Non-control Traffic and RPC Parameters</a></li>
+<ul><li>7.1.   <a href="#rfc.section.7.1">Indexed fragmentation</a></li>
+</ul><li>8.   <a href="#rfc.section.8">Encoding of Non-control Traffic and RPC Parameters</a></li>
 <ul><li>8.1.   <a href="#rfc.section.8.1">Encoding of message type</a></li>
 <li>8.2.   <a href="#rfc.section.8.2">Encoding of a message&#8217;s fields (list encoding)</a></li>
 <li>8.3.   <a href="#rfc.section.8.3">Length of Identifier Fields</a></li>
@@ -511,57 +516,80 @@
   </ul>
 
   <h1 id="rfc.section.1"><a href="#rfc.section.1">1.</a> <a href="#problems" id="problems">Introduction</a></h1>
-<p id="rfc.section.1.p.1">This document specifies a logical link control (LLC) protocol to (1) establish a secure association between two endpoints running ICN software, (2) enable endpoints to control, test, and negotiate options for the secured link, and (3) transfer ICN protocol messages in across this link. In this way, it is much like the PPP (CITE) protocol.  It consists of a mandatory secure association establishment procedure, a set of management and negotiation methods to explore, configure, and control the essential parameters for communication, permitting to switch from unsecured message exchange to encrypted and authenticated communications, and an encapsulation mechanism for ICN protocol message transfer. It supports the dynamic creation of logical links on a per-protocol basis, permitting to use the link for multiple ICN protocols such as CCNx and NDN, in parallel.</p>
-<p id="rfc.section.1.p.2">It is assumed that two endpoints executing the ICN-LLC protocol have already discovered each other and configured their lower-layer transport mechanism to enable bidirectional communication. A single session is established over this link for end-to-end control. This session is used to control, for example, the session (and in consequence also the ICN protocols&#8217;) MTU size before mandatory encryption is turned on between the two endpoints. Within this session, encrypted logical channels, called pipes, are established both for control and for production traffic. Each endpoint is authenticated during this stage using either ephemeral or long-term trusted identities.</p>
-<p id="rfc.section.1.p.3">The hierarchy of control in ICN-LLC is shown below. Note that multiple pipes are used to encapsulate multiple instances of (possibly different) ICN protocols between two endpoints, so as to enable isolation and support future versioning.</p>
+<p id="rfc.section.1.p.1">This document specifies a logical link control (LLC) protocol to (1) establish a secure association between two endpoints running ICN software, (2) enable endpoints to control, test, and negotiate options for the secured link, and (3) transfer ICN protocol messages in across this link. In this way, it is much like the PPP (CITE) protocol.  It consists of a mandatory secure association establishment procedure (if encryption is not provided by the outer link layer), a set of management and negotiation methods to explore, configure, and control the essential parameters for communication, permitting to switch from unsecured message exchange to encrypted and authenticated communications, and a demux mechanism for ICN protocol message transfer. It supports the dynamic creation of logical links (pipes) on a per-protocol basis, permitting to use the link for multiple ICN protocols and protocol versions such as CCNx and NDN, in parallel.</p>
+<p id="rfc.section.1.p.2">It is assumed that two endpoints executing the ICN-LLC protocol have already discovered each other and configured their lower-layer transport mechanism to enable bidirectional communication. A single session is established over this link for end-to-end control. This session is used to control, for example, the session&#8217;s (and in consequence also the ICN protocols&#8217;) MTU size. If the underlying link is not secure, a secure association phase must follow where each endpoint is authenticated using either ephemeral or long-term trusted identities. Within the secured session, logical channels called pipes are established both for control and for production traffic.</p>
+<p id="rfc.section.1.p.3">The hierarchy of control in ICN-LLC is shown below.  </p>
 <div id="rfc.figure.1"/>
 <div id="llc-hierarchy"/>
 <pre>
-  +-----------------------------------------------+
-  |        1 Link (bidirectional transport)       |
-  |  +-----------------------------------------+  |
-  |  |     1 Session                           |  |
-  |  |   +----------------------------------+  |  |
-  |  |   | N Pipes (= undirect. log. links) |  |  |
-  |  |   +----------------------------------+  |  |
-  |  +-----------------------------------------+  |
-  +-----------------------------------------------+
+  +------------------------+
+  |   1 Link               |  bidirectional, potentially secured, given
+  |  +------------------+  |
+  |  |   1 Session      |  |  secure endpoint association, negotiated
+  |  |  +------------+  |  |
+  |  |  |   N Pipes  |  |  |  secure unidirectional logical links, on-demand
+  |  |  +------------+  |  |
+  |  +------------------+  |
+  +------------------------+
 </pre>
 <p class="figure">Figure 1: Control hierarchy in the LLC.</p>
-<p id="rfc.section.1.p.4">All control (e.g., negotiation) messages follow an Remote Procedure Call-style (RPC) model. That is, an RPC-request has an identity for the parent context (session) and a unique call identifier, an action (verb) that identifies the action to be done as well as additional action-specific parameters. Each RPC-request is followed by an RPC-response which specifies the result of the operation, e.g., an OK flag or a FAIL flag with some useful error information.</p>
-<p id="rfc.section.1.p.5">The goal of the ICN-LLC service is to provide a framework that enables two parties to negotiate session and pipe properties and transfer production traffic in encrypted and encapsulated datagrams. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The design of ICN-LLC&#8217;s RPC approach is extensible enough in order to support a variety of endpoint- and application-specific link management requirements.</p>
+<p id="rfc.section.1.p.4">All negotiations follow a Remote Procedure Call style (RPC). RPC in this context means: there is an Interest/Content-style request/response protocol with the addition of a universal parameter marshalling method.</p>
+<p id="rfc.section.1.p.5">The goal of the ICN-LLC service is to provide a framework that enables two parties to negotiate session and pipe properties and to transfer production traffic in encrypted and encapsulated datagrams. For example, pipes could be configured to provide reliable and ordered datagram delivery, or endpoints could negotiate traffic control parameters on a per-session or per-pipe basis. The design of ICN-LLC&#8217;s RPC approach is extensible enough in order to support a variety of endpoint- and application-specific link management requirements.</p>
 <p id="rfc.section.1.p.6">Scope of document:</p>
 <p id="rfc.section.1.p.7">The rest of this document introduces definitions and notation used in the description of the ICN-LLC protocol, outlines the relevant concepts and then provides a high-level description of the protocol (along with message content) as well as the encoding details of each message. A full encoding example completes this document.</p>
-<p/>
 <h1 id="rfc.section.2"><a href="#rfc.section.2">2.</a> <a href="#definitions-and-notation" id="definitions-and-notation">Definitions and Notation</a></h1>
 <p id="rfc.section.2.p.1">The following terms are used:</p>
 <p/>
 
 <ul>
-  <li>endpoint: A (session) endpoint which is capable of supporting at least one ICN protocol, for example an IP node reachable via UDP.</li>
+  <li>endpoint: A (session) endpoint which is capable of supporting at least one ICN protocol, for example an IP node reachable via UDP and running an NDN forwarder.</li>
   <li>link: A bidirectional datagram service between two endpoints (e.g., UDP, Ethernet).</li>
+  <li>outer security context: the result of a security protocol executed before the start of ICN-LLC e.g., DTLS, IPsec or MacSec.</li>
   <li>session: A semi-permanent context in which (possibly encrypted) information is exchanged over a link between two endpoints.</li>
   <li>session manager: A control unit responsible for managing a session between two endpoints.</li>
   <li>pipe, or logical link: An isolated and ephemeral context managed by a session manager in which encrypted traffic is sent between two endpoints.</li>
   <li>secure association: A set of shared security information (e.g., session keys) shared between two endpoints that is used for secure communication.</li>
-  <li>RPC-request: A request to perform an RPC action from a sender to a receiver.</li>
-  <li>RPC-response: A response to an RPC-request sent from RPC-request receiver to the RPC-request sender.</li>
+  <li>Remote Procedure Call (RPC): an Interest/Content exchange where an Interest carries the name of a remote procedure to be called as well as its parameters while the returned Content carries a return code and a result data structure.</li>
+  <li>RPC-request: A request to perform a remote action.</li>
+  <li>RPC-response: The result of having executed an RPC-request.</li>
 </ul>
 <h1 id="rfc.section.3"><a href="#rfc.section.3">3.</a> <a href="#icn-llc-concepts" id="icn-llc-concepts">ICN-LLC Concepts</a></h1>
 <h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#assumptions" id="assumptions">Assumptions</a></h1>
 <p id="rfc.section.3.1.p.1">The ICN-LLC protocol makes the following assumptions:</p>
 <p id="rfc.section.3.1.p.2">(1) The communication parameters necessary to communicate over a link are established before the protocol is executed. This includes settings that, for example, enable bidirectional firewall traversal.</p>
 <p id="rfc.section.3.1.p.3">(2) The underlying link protocol provides the most basic ability to frame/encapsulate and move an arbitrary (up to some maximum) sized payload from one endpoint to another. We do not assume ordered or reliable datagram transfer. Thus, the protocol is entirely transport-agnostic.</p>
-<p id="rfc.section.3.1.p.4">(3) Each endpoint has or can generate a cryptographic identity and can prove its identity to the other endpoints over the respective links.</p>
-<p id="rfc.section.3.1.p.5">(4) Endpoints are pre-configured with one or more trust anchors permitting them to identity other endpoints that they trust i.e., those endpoints that are allowed to participate in the execution of the ICN-LLC protocol. These identities could be ascertained online (making us of the trust anchors) or be pre-configured manually by system administrators.</p>
-<p id="rfc.section.3.1.p.6">(5) All LLC traffic must be protected using authenticated encryption.</p>
+<p id="rfc.section.3.1.p.4">(3) All ICN-LLC traffic must be protected using authenticated encryption. Two cases are distinguished, as shown in the following protocol stack configurations:</p>
+<pre>
+              client apps                        client apps
+                   |                                  |
+  +------------+---+--+              +------------+---+--+
+  | ini | ctrl | xfer |  ^         ^ | ini | ctrl | xfer |
+  | msg | msgs | msgs |  |         | | msg | msgs | msgs |
+  |     |-------------|  |    L    | |     |-------------|
+  |     |  LLC pipes  |  |    L    | |     |  LLC pipes  |
+  |     |-------------|  |    C    | |     |-------------|
+  |     | (fragment.) |  v         | |     | (fragment.) |
+  +===================+            | |     |-------------|
+  | outer security ctx|            v |     | auth, encr. |
+  +-------------------+              +===================+
+  | link: datagram srv|              | link: datagram srv|
+  +-------------------+              +-------------------+
+  
+ 3a) outer security context      3b) security part of ICN-LLC
+</pre>
+<p id="rfc.section.3.1.p.5">(3a) The underlying link comes enhanced with an &#8220;outer security context&#8221; i.e. it already provides security guarantees such that the peers are mutually authenticated and link datagrams are encrypted.  In this case the ICN-LLC protocol reduces to handling the controll traffic and creating and tearing down pipes for ICN transfer traffic.</p>
+<p id="rfc.section.3.1.p.6">(3b) If the link that underlies the ICN-LLC protocol is unauthenticated and unprotected, the ICN-LLC framework provides its own means to secure the communication. Only thereafter it is possible to establish and manage ICN transfer pipes.</p>
+<p id="rfc.section.3.1.p.7">In this case where ICN-LLC has to do the setup of a secure association, it is assumed that each endpoint has or can generate a cryptographic identity and can prove its identity to the other endpoints over the respective links.</p>
+<p id="rfc.section.3.1.p.8">Moreover, endpoints have then to be pre-configured with one or more trust anchors permitting them to identity other endpoints that they trust i.e., those endpoints that are allowed to participate in the execution of the ICN-LLC protocol. These identities could be ascertained online (making us of the trust anchors) or be pre-configured manually by system administrators.</p>
+<p id="rfc.section.3.1.p.9">Note that in this case some intialization messages will be transported in clear until the secure association is established, or until a reset of the session is requested.</p>
 <h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#cast" id="cast">Cast</a></h1>
+<p id="rfc.section.3.2.p.1">The ICN-LLC protocol entity exposes an API towards its clients, as is shown in the following diagram.</p>
 <div id="rfc.figure.2"/>
 <div id="llc-cast"/>
 <pre>
-    ^    +------+ +-----+                       +-----+ +------+
+         +------+ +-----+                       +-----+ +------+
  clients | CCNx | | NDN |                       | NDN | | CCNx |
-    v    +------+ +-----+                       +-----+ +------+
+         +------+ +-----+                       +-----+ +------+
              ^       |                             ^        ^
              |       |                             |        |
              v       v                             |        v
@@ -572,7 +600,7 @@
          | manager      | |   ...             | | manager      |
          +--------------+ +-------------------+ +--------------+
 
-         &lt;-- endpoint --&gt; &lt;------- link ------&gt; &lt;-- endpoint --&gt;
+         &lt;-- endpoint --&gt; &lt;- (secured) link --&gt; &lt;-- endpoint --&gt;
 </pre>
 <p class="figure">Figure 2: Entities in ICN-LLC after secure association: all logical links of the session are encrypted and authenticated.</p>
 <h1 id="rfc.section.3.3"><a href="#rfc.section.3.3">3.3.</a> <a href="#api-for-endpoint-clients" id="api-for-endpoint-clients">API for Endpoint Clients</a></h1>
@@ -580,6 +608,7 @@
 <p id="rfc.section.3.3.p.2">This client API provides access to very basic services to interconnect ICN peers. In a UNIX environment, the API could be structured as follows (in C syntax):</p>
 <pre>
      int icnllc_init(linkaddr *local, credentials *me, fct *notify);
+     int icnllc_trustedInit(int secSock, fct *notify);
      int icnllc_register(int icnllcHandler, protoID *pid, fct *upcall);
      int icnllc_deregister(int registerNr);
      int icnllc_openSession(int handler, linkaddr *peer, trustanchors *t);
@@ -597,8 +626,9 @@
    #define PROTOID_CCNX10  "/proto/icn/ccnx.2015"
    #define PROTOID_NDN     "/proto/icn/ndn.2013"
 </pre>
-<h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#client-work-flow" id="client-work-flow">Client work flow</a></h1>
-<p id="rfc.section.3.4.p.1">ICN clients e.g., forwarders, will use the API as follows.  A CCNx router wanting to establish a secure link to a peer would be programmed as follows:</p>
+<h1 id="rfc.section.3.4"><a href="#rfc.section.3.4">3.4.</a> <a href="#client-work-flow-for-unsecured-links" id="client-work-flow-for-unsecured-links">Client work flow (for unsecured links)</a></h1>
+<p id="rfc.section.3.4.p.1">In case that the underlying link offers either raw and unsecured UDP, IP or Ethernet datagrams, ICN endnotes will use the API as follows.</p>
+<p id="rfc.section.3.4.p.2">A CCNx router wanting to establish a secure link to a peer:</p>
 <pre>
    llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
    s = icnllc_openSession(llc, &amp;remoteUDP, &amp;myTrustAnchor);
@@ -617,14 +647,33 @@
    icnllc_closeSession(s)
    icnllc_fini(llc);
 </pre>
-<p id="rfc.section.3.4.p.2">A NDN router waiting for session establishment from other peers would issue this sequence of actions (without showing error handling):</p>
+<p id="rfc.section.3.4.p.3">A NDN router waiting for session establishment from other peers would issue this sequence of actions (without showing error handling):</p>
 <pre>
    llc = icnllc_init(&amp;myUDP, &amp;myCredentials);
    ndn = icnllc_register(llc, "/proto/icn/ndn.2013", NDNupcall);
    // ... serve pipe establishment in NDNupcall()
+   
    icnllc_deregister(ndn);
    icnllc_fini(llc);
 </pre>
+<h1 id="rfc.section.3.5"><a href="#rfc.section.3.5">3.5.</a> <a href="#client-work-flow-for-secured-links" id="client-work-flow-for-secured-links">Client work flow (for secured links)</a></h1>
+<p id="rfc.section.3.5.p.1">If the underlying link is secured, the use of the API is simplified for the initiator side.</p>
+<p id="rfc.section.3.5.p.2">An endnode wanting to create logical pipes to two different remote NFD processes on the same host:</p>
+<pre>
+   llc = icnllc_trustedInit(securedSocket, &amp;eventCallback);
+   s = icnllc_openSession(llc, NULL, NULL);
+
+   mgmt  = icnllc_openPipe(s, "/proto/icn/ndn.2015.mgmt");
+   peer1 = icnllc_openPipe(s, "/proc/nfd/pid6225", NULL);
+   peer2 = icnllc_openPipe(s, "/proc/nfd/pid6227", NULL);
+
+   // read, write ...
+
+   // close pipes ...
+   icnllc_closeSession(s)
+   icnllc_fini(llc);
+</pre>
+<p id="rfc.section.3.5.p.3">For the passive (&#8220;listening&#8221;) side, the only change is from icnllc_init(PEERCOORDINATES, CREDENTIALS) to icnllc_trustedInit(SECURESOCK).</p>
 <h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#link-level-rpc-and-logical-link-traffic" id="link-level-rpc-and-logical-link-traffic">Link-level RPC and Logical Link Traffic</a></h1>
 <p id="rfc.section.4.p.1">All configuration state of a session, including state related to the session&#8217;s pipes, are managed by remote procedure operations. To this end, two message types &#8220;RPC-request&#8221; and &#8220;RPC-response&#8221; are needed. A third message type serves to recognize actual production (= non-control) traffic, called &#8220;logical link traffic&#8221;.  In the subsequent sections we describe these three message types and their fields, as well as the INC-LLC protocol, in an encoding-neutral way using prefixed lists. For example, a packet with the fields</p>
 <pre>
@@ -657,10 +706,12 @@
 <h1 id="rfc.section.4.2"><a href="#rfc.section.4.2">4.2.</a> <a href="#rpc-response" id="rpc-response">RPC-response</a></h1>
 <p id="rfc.section.4.2.p.1">An RPC-response is always the reaction to a received RPC-request. It contains a copy of the request&#8217;s RID so that the requestor can correlate the answer with the pending request. Furthermore, the RPC-response has a verb similar to the RPC-request. However, the permitted verbs are limited to either &#8220;OK&#8221; or &#8220;FAIL&#8221;.</p>
 <h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> <a href="#logical-link-traffic" id="logical-link-traffic">Logical Link Traffic</a></h1>
-<p id="rfc.section.4.3.p.1">Logical Link Traffic refers to the messages that travel inside a logical link (called pipe). This message type has two fields: logical link ID and payload.</p>
-<p id="rfc.section.4.3.p.2">The logical link is identified by a tuple that refers to the session context (SID) as well as the pipe to which this message belongs to. In fact, the (SID, PID) tuple is a &#8220;network pointer&#8221; into the other end&#8217;s function space [NetPtrs]. The pipe ID is also a tuple, in this case of two numbers. Often, pipes are used in pairs (for bidirectional interconnection of ICN clients) in which case the tuple&#8217;s values are swapped.</p>
+<p id="rfc.section.4.3.p.1">Logical Link Traffic (llt) refers to the messages that travel inside a pipe. This message type has two fields: a logical link ID (LID) and a payload.</p>
+<p id="rfc.section.4.3.p.2">The logical link is identified by a tuple that refers to the session context (SID) as well as the pipe ID to which this message belongs to. In fact, the (SID, PID) tuple is a &#8220;network pointer&#8221; into the other end&#8217;s function space [NetPtrs]. The pipe ID (PID) itself is also a tuple, in this case of two integers. Often, pipes are used in pairs (for bidirectional interconnection of ICN clients) in which case the tuple&#8217;s integer values are swapped.</p>
 <h1 id="rfc.section.4.4"><a href="#rfc.section.4.4">4.4.</a> <a href="#motivating-the-rpc-encoding" id="motivating-the-rpc-encoding">Motivating the RPC encoding</a></h1>
-<p id="rfc.section.4.4.p.1">This RPC-based mechanism is entirely protocol- and transport-agnostic, and enables each endpoint to operate without making assumptions about the implementation details, e.g., nonce size, session and pipe management, etc., of the other endpoint.  Link-local names for control messages for all protocols (CCNx 0.8x, NDN 2013, CCNx 1.0, etc.) could be adopted in lieu of these RPC messages. However, this requires that each endhost understand and use the same naming scheme. Moreover, managing the link for non-ICN traffic purposes (e.g., setting the MTU size) should be done independently of the protocol that exchanges traffic across the link.</p>
+<p id="rfc.section.4.4.p.1">The RPC-based negotiation and control mechanism of ICN-LLC is entirely protocol- and transport-agnostic. It enables each endpoint to operate without making assumptions about the implementation details, e.g., nonce size, session and pipe management, ICN type etc., of the other endpoint.</p>
+<p id="rfc.section.4.4.p.2">The alternative to these RPC messages would be to adopt link-local names for control messages inside some specific ICN architecture (CCNx 0.8x, NDN 2013, CCNx 1.0, etc.). However, this requires that each endhost understand and use the same ICN type and its naming scheme. Moreover, managing the link for non-ICN traffic purposes (e.g., setting the MTU size) should be done independently of the protocol that exchanges traffic across the link.</p>
+<p id="rfc.section.4.4.p.3">The second contribution of the RPC mechanics is the support for marshalling configuration parameters and results containing complex data structures. ICN-LLC uses &#8220;symoblic expressions&#8221;, a generic encoding of lists, which is detailed in the section &#8220;Encoding of a message&#8217;s field&#8221;.</p>
 <h1 id="rfc.section.5"><a href="#rfc.section.5">5.</a> <a href="#llc-identities-and-security" id="llc-identities-and-security">LLC Identities and Security</a></h1>
 <p id="rfc.section.5.p.1">The concept of endpoint identity is crucial to the operation and execution of the LLC protocol. Identities are used to authenticate endpoints so as to establish a secure (but possibly untrusted) association. Cryptographically, an identity is associated with some keying material, e.g., a public and private key pair, or a pre-shared key. In this document, we consider two types of identities:</p>
 <p id="rfc.section.5.p.2">1) [EPHEMERAL-IDENTITY] Ephemeral (short-term, on-demand) identities that are not certified by a trust anchor. This type of identity could be backed by an ephemeral public and private key pair or a symmetric key, all of which are generated at random and used for the purposes of a single session.</p>
@@ -823,12 +874,22 @@ Q&lt;--R: llt-message(LIDBA, encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 </pre>
 <h1 id="rfc.section.7"><a href="#rfc.section.7">7.</a> <a href="#fragmentation" id="fragmentation">Fragmentation</a></h1>
-<p id="rfc.section.7.p.1">As a link protocol, the LLC must support fragmentation to the link MTU size.  This is to be done using indexed, hop-by-hop fragmentation (without out-of-order delivery). Each llt-message and RPC message is uniquely identified by a nonce, and a fragment of one of these messages is indicated by that same nonce and an index. If the LLC must transfer a message that is larger than the link MTU in an llt-message or RPC message, then this message is fragmented to the appropriate MTU size.  Each fragment is given an index identifier that is then sent along with the message. In other words, the LID and RID identifiers would be modified from</p>
-<p id="rfc.section.7.p.2">RID = (SID, nonce) LID = (SID, PID, nonce)</p>
-<p id="rfc.section.7.p.3">to</p>
-<p id="rfc.section.7.p.4">RID = (SID, nonce, fragment ID, fragment count) LID = (SID, PID, nonce, fragment ID, fragment count)</p>
-<p id="rfc.section.7.p.5">The receiver of a fragmented message will buffer each fragment until all have been received. The size of this buffer is denoted by the fragment count in the LID and RID identifiers. The original message is reassembled upon receipt of all fragments and then delivered to the appropriate handler.</p>
-<p id="rfc.section.7.p.6">Also, each fragmented message buffer at the receiver is associated with a timer that is refreshed upon the receipt of a fragment. If this timer expires, the buffer is cleared and the partially received message is dropped.</p>
+<p id="rfc.section.7.p.1">As a link protocol, ICN-LLC must support fragmentation to the link MTU size. The used fragmentarion method is runtime-configurable and is subject to ICN-LLC&#8217;s negotiation methodology. Currently two (hop-by-hop) fragmentation schemas are envisaged: indexed fragmentation and Begin/End fragmentation.</p>
+<h1 id="rfc.section.7.1"><a href="#rfc.section.7.1">7.1.</a> <a href="#indexed-fragmentation" id="indexed-fragmentation">Indexed fragmentation</a></h1>
+<p id="rfc.section.7.1.p.1">In indexed fragmentation (without out-of-order delivery), all fragments of a given llt-message and RPC message share a unique nonce. We either reuse an RPC&#8217;s nonce, or create a special nonce for llt messages. Moreover, fragments carry an index number specifying at the order in which the carried bytes must be reassembled to yield the original message, and the number of fragments for the given message.</p>
+<p id="rfc.section.7.1.p.2">The fragments for LLC&#8217;s three packet types look as follows:</p>
+<pre>
+  RPC-request((SID, nonce) ...) --&gt;
+    RPC-request-frag((SID, nonce, ndx, cnt), part-of-orig-message)
+
+  RPC-response((SID, nonce) ...) --&gt;
+    RPC-response-frag((SID, nonce, ndx, cnt), part-of-orig-message)
+
+  llt-message((SID, PID, ...) --&gt;
+    llt-message-frag(SID, PID, frag-nonce, ndx, cnt, part-of-orig-msg)
+</pre>
+<p id="rfc.section.7.1.p.3">The receiver of a fragmented message will buffer each fragment until all have been received. The size of this buffer is denoted by the fragment count in the LID and RID identifiers. The original message is reassembled upon receipt of all fragments and then delivered to the appropriate handler.</p>
+<p id="rfc.section.7.1.p.4">Also, each fragmented message buffer at the receiver is associated with a timer that is refreshed upon the receipt of a fragment. If this timer expires, the buffer is cleared and the partially received message is dropped.</p>
 <h1 id="rfc.section.8"><a href="#rfc.section.8">8.</a> <a href="#encoding-of-non-control-traffic-and-rpc-parameters" id="encoding-of-non-control-traffic-and-rpc-parameters">Encoding of Non-control Traffic and RPC Parameters</a></h1>
 <p id="rfc.section.8.p.1">Structurally, all three message types of ICN-LLC are identical in being a list of fields. A single header byte discriminates among the message types, followed by an encoding of the message&#8217;s field list:</p>
 <pre>
