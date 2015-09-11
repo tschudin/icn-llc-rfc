@@ -807,9 +807,9 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
 
 ### Link Reset
 
-If the link (not pipe) needs to be reset, the issuer of the request must
-send this message in cleartext (e.g., in case the session keys are lost).
-This is a simple reset exchange that succeeds only if the recipient agrees
+If the link (not pipe) needs to be reset (for a re-key procedure), the
+issuer of the request must send this message in cleartext (e.g., in case the session keys
+are lost). This is a simple reset exchange that succeeds only if the recipient agrees
 to reset the link and destroy all session state. A responder should only agree
 to this step if they have not received any traffic from the link over a specific
 period of time (to avoid malicious reset attempts).
@@ -835,8 +835,7 @@ features can be added as needed using the same model.
 After a session and SA have been established, the protocol-specific
 links (pipe) must be created. This is done with the following
 exchange. The number 5 shown below is arbitrary and signals for this
-specific task that Q or R can choose their part of the pipe ID at
-will.
+specific task that Q or R can choose their part of the pipe ID at will.
 
 ~~~
 Q-->R: llt-message(LIDAB, Encrypt(keyAB,
