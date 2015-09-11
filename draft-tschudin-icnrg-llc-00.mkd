@@ -85,6 +85,9 @@ message transfer. It supports the dynamic creation of logical links (pipes)
 on a per-protocol basis, permitting to use the link for multiple ICN
 protocols and protocol versions such as CCNx and NDN, in parallel.
 
+Taking over when endpoints see "first light"
+--------------------------------------------
+
 It is assumed that two endpoints executing the ICN-LLC protocol have
 already discovered each other and configured their lower-layer
 transport mechanism to enable bidirectional communication. A single
@@ -116,12 +119,26 @@ two endpoints, so as to enable isolation and support future versioning.
 ~~~
 {: #llc-hierarchy title="Control hierarchy in the LLC."}
 
-All negotiations follow a Remote Procedure Call style (RPC). RPC in
-this context means: there is an Interest/Content-style
-request/response protocol with the addition of a universal parameter
-marshalling method.
+Rudimentary RPC
+---------------
 
-The goal of the ICN-LLC service is to provide a framework that enables
+All negotiations in ICN-LLC follow a Remote Procedure Call style (RPC)
+for two important reasons: It describes the sequence and structures
+the content of Interest/Content-style request/responses. Moreover, it
+provides a universal parameter marshalling method based on "symbolic expression", see the section "Encoding of a message's fields".
+
+The alternative to this RPC framework would have been to adopt
+link-local names for control messages inside some specific ICN
+architecture (CCNx 0.8x, NDN 2013, CCNx 1.0, etc.). However, this
+requires that each endhost understand and use the same ICN type and
+its naming scheme. Moreover, managing the link for non-ICN traffic
+purposes (e.g., setting the MTU size) should be done independently of
+the protocol that exchanges traffic across the link.
+
+ICN-LLC services
+----------------
+
+The goal of the ICN-LLC is to let
 two parties to negotiate session and pipe properties and to transfer
 production traffic in encrypted and encapsulated datagrams. For example,
 pipes could be configured to provide reliable and ordered datagram
@@ -130,7 +147,8 @@ per-session or per-pipe basis. The design of ICN-LLC's RPC approach is
 extensible enough in order to support a variety of endpoint- and
 application-specific link management requirements.
 
-Scope of document:
+Scope of document
+-----------------
 
 The rest of this document introduces definitions and notation used in
 the description of the ICN-LLC protocol, outlines the relevant
@@ -439,9 +457,13 @@ of the remote procedure) and an optional payload with the list of
 parameters.
 
 The RID carries two pieces of information: The current session's ID
-(SID) comes first, followed by a nonce. The role of the SID is to
+(SID) comes first, followed by a nonce.
+
+The role of the SID is to
 refer to previously established state and must be kept constant for
-all messages sent inside the established session. The Nonce is
+all messages sent inside the established session.
+
+The Nonce is
 randomly chosen for each new RPC-request and permits to retransmit a
 request in case the sender thinks that the request or the reply got
 lost. It is not a sequence number, though.
@@ -450,7 +472,11 @@ lost. It is not a sequence number, though.
 RPC-response
 ------------
 
-An RPC-response is always the reaction to a received RPC-request. It
+An RPC-response is always the reaction to a received RPC-request that
+was successfully parsed. Requests with unknown session ID or verb MUST
+be silently discarded.
+
+The response
 contains a copy of the request's RID so that the requestor can
 correlate the answer with the pending request. Furthermore, the
 RPC-response has a verb similar to the RPC-request. However, the
@@ -472,28 +498,10 @@ in this case of two integers. Often, pipes are used in pairs (for
 bidirectional interconnection of ICN clients) in which case the
 tuple's integer values are swapped.
 
-Motivating the RPC encoding
----------------------------
+Llt messages whose LID cannot be matched with internal data structures
+MUST be silently discarded.
 
-The RPC-based negotiation and control mechanism of ICN-LLC is entirely
-protocol- and transport-agnostic. It enables each endpoint to operate
-without making assumptions about the implementation details, e.g.,
-nonce size, session and pipe management, ICN type etc., of the other
-endpoint.
 
-The alternative to these RPC messages would be to adopt link-local
-names for control messages inside some specific ICN architecture (CCNx
-0.8x, NDN 2013, CCNx 1.0, etc.). However, this requires that each
-endhost understand and use the same ICN type and its naming
-scheme. Moreover, managing the link for non-ICN traffic purposes
-(e.g., setting the MTU size) should be done independently of the
-protocol that exchanges traffic across the link.
-
-The second contribution of the RPC mechanics is the support for
-marshalling configuration parameters and results containing complex data
-structures. ICN-LLC uses "symoblic expressions", a generic encoding of
-lists, which is detailed in the section "Encoding of a message's
-field".
 
 LLC Identities and Security
 ===========================
@@ -555,8 +563,35 @@ LLC Protocol Mechanics
 We now describe the procedures and tasks (RPC calls) that are used
 in the LLC protocol. Any side can initiate a remote procedure call at any time.
 It is suggested to limit the number of RPCs that one side issues in parallel
-to four (including nesting). For simplicity, we refer to each of the
-endpoints in the protocol as Q for Questioner and R for Responder.
+to four (including nesting).
+
+For simplicity, we refer to each of the endpoints in the protocol as Q
+for Questioner and R for Responder.
+
+For notational purposes, Encrypt(K,M) stands for the ciphertext
+resulting from applying key K to message M and Signature(K,M) for a
+signature of M using key K.
+
+Note that the message exchange looks different depending on whether an
+outer security context exists or not. If one exists, the RPC messages
+do not have to be encrypted; with an outer security context in place,
+the extra encryption activity must be ommited. As an example:
+
+~~~
+Q-->R: llt-message(LIDAB, Encrypt(keyAB,
+                   rpc-request((SID, nonce), "noop", (NIL))))
+~~~
+
+simply becomes
+
+~~~
+Q-->R: llt-message(LIDAB, rpc-request((SID, nonce), "noop", (NIL)))
+~~~
+
+In the following sections we always show the encryption case (where
+applicable).
+
+
 
 ## Link Creation
 
@@ -575,9 +610,9 @@ the following RPC exchange.
 Q-->R: rpc-request((SID-1,0), nonce), CREATE-SESSION, ())
 
 On success:
-  Q<--R: rpc-response((SID-1,0), nonce), OK, list(SID-2))
+  Q<--R: rpc-response((SID-1,0), nonce), OK, (SID-2))
 On failure:
-  Q<--R: rpc-response((SID-1,0), nonce), FAIL, list(<reason>))
+  Q<--R: rpc-response((SID-1,0), nonce), FAIL, (<reason>))
 ~~~
 {: #session-init title="Session Initialization Message Exchange."}
 
@@ -618,12 +653,16 @@ association (SA).  Thus, before SA, the contents of the RPC request
 and response are unencrypted.  However, after a SA is established, all
 inspection messages will be encrypted like other link traffic.
 
-### Secure Association Establishment
 
-The secure association (SA) establishment message exchange is used to
-create a secure session over a given link. This enables all subsequent
-traffic, including RPC exchanges, to be authenticated and
-encrypted. The goal is for each endpoint to authenticate the entity
+### Secure Association Establishment (WITHOUT outer security context)
+
+If no outer security context exists, the secure association (SA)
+establishment message exchange is used to create a secure session over
+a given link. This enables all subsequent traffic, including RPC
+exchanges, to be authenticated and encrypted. If an outer security
+context already exists, this task must not be performed.
+
+The goal of SA establishment is for each endpoint to authenticate the entity
 running on the other endpoint of a given link, and to then establish
 shared symmetric keys to perform authenticated encryption of all
 traffic that follows the exchange. Currently, we specify a simple
@@ -642,9 +681,6 @@ authorization can only happen with long-term trusted identities.
 Also, observe that the SA involves nested RPCs: The responder to the initial
 RPC request will do an RPC in reverse direction in order to
 authenticate the requestor.
-
-Finally, for notational purposes, Encrypt(K,M) stands for the ciphertext resulting
-from applying key K to message M and Signature(K,M) for a signature of M using key K.
 
 ~~~
 Q-->R: rpc-request((SID, nonceA), “prove-identity",
@@ -725,12 +761,28 @@ Q<--R: llt-message(LIDBA, Encrypt(keyAB,
 ~~~
 {: #secure-inspection title="RPC inside a local pipe."}
 
+
+### Secure Association Establishment (WITH outer security context)
+
+If an outer security context exists, there is no need to perform an
+explicit (secure) association task because the Session Initialization
+already succeeded in associating both endpoints.
+
+
+
 ## Link Negotiation
 
-The negotiation tasks are performed imperatively: a questioner first selects
+Note that negotiation tasks can only be performed once the endpoints
+are associated and have been authenticated and exchange their messages
+in encrypted form. A request to change the MTU, for example, is
+invalid before session initialization.
+
+Negotiation tasks are performed imperatively: a questioner first selects
 the supported or provided values for a given option from
 the responder, and then subsequently sets the value of said option
-using one of the supported values. Failures occur when a questioner
+using one of the supported values.
+
+Failures can occur when a questioner
 fails to use or provide a correct value for the responder (i.e.,
 an invalid MTU value is set, or an unsupported cryptographic algorithm
 is specified). In all cases, when failures occur, the responder
@@ -742,7 +794,7 @@ details or possible remediation actions.
 ### Set MTU
 
 Setting the MTU is a standard message in the LLC protocol that has
-the following RPC exchange format. (We assume the MTU was already acquired
+the following RPC exchange format. (We assume the default MTU was already acquired
 from the prior inquiry performed in the link creation step of the protocol.)
 
 ~~~
@@ -786,6 +838,11 @@ On failure:
 ~~~
 {: #set-frag-msg title="Set the fragmentation options."}
 
+The responder must be carefull to not reply with a message length
+beyond the current MTU, in case fragmentation has not been activted
+yet.
+
+
 ## Link Maintenance
 
 Link maintenance is composed of the tasks needed to detect failures and recover.
@@ -798,29 +855,26 @@ Use the NOOP call to verify that the peer session manager is still up
 and running.
 
 ~~~
-Q-->R: llt-message(LIDAB, encrypt(KeyAB,
+Q-->R: llt-message(LIDAB, Encrypt(KeyAB,
                    rpc-request((SID, nonce), NOOP, NIL)))
 
-Q<--R: llt-message(LIDBA, encrypt(Key-AB,
+Q<--R: llt-message(LIDBA, Encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 ~~~
 
-### Link Reset
+### Dissociation
 
-If the link (not pipe) needs to be reset, the issuer of the request must
-send this message in cleartext (e.g., in case the session keys are lost).
-This is a simple reset exchange that succeeds only if the recipient agrees
-to reset the link and destroy all session state. A responder should only agree
-to this step if they have not received any traffic from the link over a specific
-period of time (to avoid malicious reset attempts).
+Once a session is not needed anymore, it must be teared down. In
+analogy to the teardown method for pipes, this is a unilateral action
+and always succeeds (even if no session was established beforehand).
 
 ~~~
-Q-->R: rpc-request(SID, nonce), RESET, NIL)
+Q-->R: llt-message(LIDAB, Encrypt(KeyAB,
+           rpc-request((SID, nonce), DESTROY-SESSION, (<reason>))))
 
 On success:
-  Q<--R: rpc-response((SID, nonce), OK)
-On failure:
-  Q<--R: rpc-response((SID, nonce), FAIL, (<reason>))
+  Q<--R: llt-message(LIDBA, Encrypt(Key-AB,
+                     rpc-response((SID, nonce), OK, NIL)))
 ~~~
 
 ## Protocol Configuration
@@ -911,22 +965,23 @@ fragmentation and Begin/End fragmentation.
 ### Indexed fragmentation
 
 In indexed fragmentation (without out-of-order delivery), all
-fragments of a given llt-message and RPC message share a unique
-nonce. We either reuse an RPC's nonce, or create a special nonce for
-llt messages. Moreover, fragments carry an index number specifying at
-the order in which the carried bytes must be reassembled to yield the
-original message, and the number of fragments for the given message.
+fragments for a given llt-message and RPC message share a unique
+nonce. In case of RPC messages, we reuse an RPC's nonce: llt messages
+receive their own nonce. In both cases, fragments carry an index
+number specifying the order in which the carried bytes must be
+reassembled to yield the original message, and the number of fragments
+needed for the original message.
 
 The fragments for LLC's three packet types look as follows:
 
 ~~~
-  RPC-request((SID, nonce) ...) -->
+RPC-request((SID, nonce) ...) -->
     RPC-request-frag((SID, nonce, ndx, cnt), part-of-orig-message)
 
-  RPC-response((SID, nonce) ...) -->
+RPC-response((SID, nonce) ...) -->
     RPC-response-frag((SID, nonce, ndx, cnt), part-of-orig-message)
 
-  llt-message((SID, PID, ...) -->
+llt-message((SID, PID, ...) -->
     llt-message-frag(SID, PID, frag-nonce, ndx, cnt, part-of-orig-msg)
 ~~~
 
@@ -939,6 +994,11 @@ appropriate handler.
 Also, each fragmented message buffer at the receiver is associated with a timer
 that is refreshed upon the receipt of a fragment. If this timer expires, the
 buffer is cleared and the partially received message is dropped.
+
+### Begin/End fragmentation
+
+to be written ...
+
 
 Encoding of Non-control Traffic and RPC Parameters
 ==================================================
