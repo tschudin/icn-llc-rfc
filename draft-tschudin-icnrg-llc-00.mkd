@@ -805,24 +805,6 @@ Q<--R: llt-message(LIDBA, encrypt(Key-AB,
                    rpc-response((SID, nonce), OK, NIL)))
 ~~~
 
-### Link Reset
-
-If the link (not pipe) needs to be reset (for a re-key procedure), the
-issuer of the request must send this message in cleartext (e.g., in case the session keys
-are lost). This is a simple reset exchange that succeeds only if the recipient agrees
-to reset the link and destroy all session state. A responder should only agree
-to this step if they have not received any traffic from the link over a specific
-period of time (to avoid malicious reset attempts).
-
-~~~
-Q-->R: rpc-request(SID, nonce), RESET, NIL)
-
-On success:
-  Q<--R: rpc-response((SID, nonce), OK)
-On failure:
-  Q<--R: rpc-response((SID, nonce), FAIL, (<reason>))
-~~~
-
 ## Protocol Configuration
 
 With a secured session established, and link features negotiated, both endpoints
