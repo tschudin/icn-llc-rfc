@@ -877,6 +877,7 @@ On success:
                      rpc-response((SID, nonce), OK, NIL)))
 ~~~
 
+
 ## Protocol Configuration
 
 With a secured session established, and link features negotiated, both endpoints
@@ -889,8 +890,7 @@ features can be added as needed using the same model.
 After a session and SA have been established, the protocol-specific
 links (pipe) must be created. This is done with the following
 exchange. The number 5 shown below is arbitrary and signals for this
-specific task that Q or R can choose their part of the pipe ID at
-will.
+specific task that Q or R can choose their part of the pipe ID at will.
 
 ~~~
 Q-->R: llt-message(LIDAB, Encrypt(keyAB,
